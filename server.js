@@ -21,6 +21,7 @@ app.use(cors({
 app.use(express.json());
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
+app.use("/api/hello", require("./routes/helloRoutes"));
 app.use(errorHandler);
 
 app.listen(port, () => {
