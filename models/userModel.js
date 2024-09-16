@@ -60,7 +60,7 @@ const userSchema = mongoose.Schema(
     memberIdeas: {
         type: String
     },
-    isIncomplete: {
+    isCheckedIn: {
         type: Boolean,
         default: false,
     },
