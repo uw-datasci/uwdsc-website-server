@@ -14,16 +14,16 @@ const router = express.Router();
 
 router.post("/register", registerUser);
 
-router.post("/forgotPass", forgotPassword);
-
-router.post("/resetPass", resetPassword);
-
-router.post("/login", loginUser);
-
-router.post("/verifyUser", verifyUser);
+router.get("/login", loginUser);
 
 router.get("/getQr", validateToken, getQr);
 
 router.get("/current", validateToken, currentUser);
+
+router.put("/forgotPass", forgotPassword);
+
+router.put("/resetPass", resetPassword);
+
+router.put("/verifyUser", verifyUser);
 
 module.exports = router;

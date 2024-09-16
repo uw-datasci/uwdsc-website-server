@@ -7,6 +7,7 @@ const nodemailer = require("nodemailer");
 const fs = require("fs");
 
 const User = require("../models/userModel");
+const Event = require("../models/eventModel");
 const transporter = nodemailer.createTransport({
   service: "gmail",
   host: "smtp.google.com",
@@ -284,7 +285,7 @@ const loginUser = asyncHandler(async (req, res) => {
       process.env.ACCESS_TOKEN_SECRET,
       { expiresIn: "3d" }
     );
-    res.status(200).json({ accessToken });
+    res.status(200).json({ accessToken: accessToken, name: user.username });
   } else {
     res.status(401);
     throw new Error("Email or password is not valid");
@@ -302,7 +303,19 @@ const currentUser = asyncHandler(async (req, res) => {
 //@route POST /api/users/getQr
 //@access private
 const getQr = asyncHandler(async (req, res) => {
-  res.json(req.user);
+  const id = req.user.id;
+  let event;
+  try {
+    event = await Event.findOne({ _id: "66e7be7a0efdeac0ca2b6644" });
+  } catch (err) {
+    console.err(err);
+  }
+  if (!event.eventName) {
+    res.status(404);
+    throw new Error("Event Document not found");
+  }
+
+  res.status(200).json({id: id, eventName: await bcrypt.hash(event.eventName, 10)});
 });
 
 module.exports = { registerUser, loginUser, verifyUser, forgotPassword, resetPassword, currentUser, getQr };

@@ -2,6 +2,7 @@ const asyncHandler = require("express-async-handler");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/userModel");
+const Event = require("../models/eventModel")
 
 
 //@desc Get all users
@@ -19,6 +20,15 @@ const getAllUsers = asyncHandler(async (req, res) => {
 const getUserByEmail = asyncHandler(async (req, res) => {
     const email = req.params.email; // Extracting email from URL parameters
     const user = await User.findOne({ email: email });
+    res.status(200).json(user);
+});
+
+//@desc Get user by ID
+//@route GET /api/admin/getUserById/:id
+//@access Private
+const getUserById = asyncHandler(async (req, res) => {
+    const id = req.params.id; // Extracting email from URL parameters
+    const user = await User.findOne({ _id: id });
     res.status(200).json(user);
 });
 
@@ -61,7 +71,7 @@ const createUser = asyncHandler(async (req, res) => {
 
 
 //@desc Update an existing user
-//@route PUT /api/users/:id
+//@route PUT /api/admin/updateUserById:id
 //@access Private
 const updateUserById = asyncHandler(async (req, res) => {
     const user = await User.findById(req.params.id);
@@ -103,7 +113,7 @@ const updateUserById = asyncHandler(async (req, res) => {
 });
 
 //@desc Delete an existing user
-//@route DELETE /api/users/:id
+//@route DELETE /api/admin/deleteUserById/:id
 //@access Private
 const deleteUserById = asyncHandler(async (req, res) => {
     try {
@@ -115,4 +125,46 @@ const deleteUserById = asyncHandler(async (req, res) => {
     }
 });
 
-module.exports = { getAllUsers, getUserByEmail, createUser, updateUserById, deleteUserById };
+//@desc Check in a user
+//@route PUT /api/admin/checkInById/:id
+//@access Private
+const checkInById = asyncHandler(async (req, res) => {
+    const eventName = req.body.eventName;
+    const id = req.params.id;
+
+    let user;
+    try {
+        user = await User.findOne({ _id: id });
+    } catch (err) {
+        console.log(err);
+    }
+    if (!user) {
+        res.status(404);
+        throw new Error("Id is not found");
+    }
+
+    let event;
+    try {
+        event = await Event.findOne({ _id: "66e7be7a0efdeac0ca2b6644" });
+    } catch (err) {
+        console.err(err);
+    }
+    if (!event.eventName) {
+        res.status(404);
+        throw new Error("Event Document not found");
+    }
+
+    if (bcrypt.compare(event.eventName, eventName)) {
+        await User.findOneAndUpdate(
+            { _id: id }, 
+            { isCheckedIn: true });
+          res.status(200).json({ message: "User checked in!"});
+    } else {
+        res.status(401);
+        throw new Error("Event hash does not match");
+    }
+
+
+});
+
+module.exports = { getAllUsers, getUserByEmail, getUserById, createUser, updateUserById, deleteUserById, checkInById };
