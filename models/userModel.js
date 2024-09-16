@@ -6,11 +6,6 @@ const userSchema = mongoose.Schema(
       type: String,
       required: [true, "Please add the user name"],
     },
-    email: {
-      type: String,
-      required: [true, "Please add the user email address"],
-      unique: [true, "Email address already taken"],
-    },
     uwEmail: {
         type: String,
         required: [true, "Please add the user Waterloo email address"],
@@ -27,7 +22,6 @@ const userSchema = mongoose.Schema(
     },
     hasPaid: {
         type: Boolean,
-        required: [true, "Please add the user payment status"],
         default: false
     },
     watIAM: {
@@ -62,7 +56,6 @@ const userSchema = mongoose.Schema(
     isEmailVerified: {
         type: Boolean,
         default: false,
-        requied: [true, "Please provide an email verfication status"]
     },
     memberIdeas: {
         type: String
@@ -70,17 +63,14 @@ const userSchema = mongoose.Schema(
     isIncomplete: {
         type: Boolean,
         default: false,
-        required: [true, "Please provide a completeness value"]
     },
     token: {
         hash: {
             type: String,
-            required: [true, "Please provide the hash value"],
             default: "somehash"
         },
         expires: {
             type: Number,
-            required: [true, "Please provide the expiry date"],
             default: -1
         },
     }
@@ -90,4 +80,4 @@ const userSchema = mongoose.Schema(
 }
 );
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model("members", userSchema);
