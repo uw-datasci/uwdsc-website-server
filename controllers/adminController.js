@@ -37,9 +37,9 @@ const getUserById = asyncHandler(async (req, res) => {
 //@route POST /api/admin/createUser
 //@access Private
 const createUser = asyncHandler(async (req, res) => {
-    const { username, email, password, userStatus } = req.body;
+    const { username, email, password, watIAM, faculty, term, heardFromWhere, memberIdeas, userStatus } = req.body;
 
-    if (!username || !email || !password) {
+    if (!username || !email || !password || !watIAM || !faculty || !term || !heardFromWhere) {
       res.status(400);
       throw new Error("All fields are mandatory!");
     }
@@ -52,12 +52,25 @@ const createUser = asyncHandler(async (req, res) => {
     //Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     console.log("Hashed Password: ", hashedPassword);
-    const user = await User.create({
-      username,
-      email,
-      password: hashedPassword,
-      userStatus: userStatus || 'member'
-    });
+
+    try {
+        user = await User.create({
+            username: username,
+            uwEmail: email,
+            password: hashedPassword,
+            watIAM: watIAM,
+            faculty: faculty,
+            term: term,
+            heardFromWhere: heardFromWhere,
+            memberIdeas: memberIdeas,
+            userStatus: userStatus || 'member'
+        });
+        console.log(`User created ${user}`);
+      } catch (err) {
+        console.log(err);
+        res.status(500);
+        throw new Error("Failed to create user");
+      }
   
     console.log(`User created ${user}`);
     if (user) {
@@ -81,13 +94,18 @@ const updateUserById = asyncHandler(async (req, res) => {
         throw new Error("User not found");
     }
 
-    const { username, email, password, userStatus } = req.body;
+    const { username, email, password, hasPaid, paymentMethod, paymentLocation, verifier, isEmailVerified, userStatus } = req.body;
 
     // update each field iff provided
     const updatedFields = {
         ...(username && { username }),
         ...(email && { email }),
-        ...(userStatus && { userStatus })
+        ...(hasPaid && { hasPaid }),
+        ...(paymentMethod && { paymentMethod }),
+        ...(paymentLocation && { paymentLocation }),
+        ...(verifier && { verifier }),
+        ...(isEmailVerified && { isEmailVerified }),
+        ...(userStatus && { userStatus }),
     };
 
     // hash and update password
