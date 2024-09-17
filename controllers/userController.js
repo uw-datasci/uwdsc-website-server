@@ -24,7 +24,7 @@ const transporter = nodemailer.createTransport({
 //@access public
 const registerUser = asyncHandler(async (req, res) => {
   const { username, email, password, watIAM, faculty, term, heardFromWhere, memberIdeas } = req.body;
-  if (!username || !email || !password) {
+  if (!username || !email || !password || !watIAM || !faculty || !term || !heardFromWhere) {
     res.status(400);
     throw new Error("All fields are mandatory!");
   }
