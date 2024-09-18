@@ -19,7 +19,7 @@ const getAllUsers = asyncHandler(async (req, res) => {
 //@access Private
 const getUserByEmail = asyncHandler(async (req, res) => {
     const email = req.params.email; // Extracting email from URL parameters
-    const user = await User.findOne({ email: email });
+    const user = await User.findOne({ uwEmail: email });
     res.status(200).json(user);
 });
 
@@ -74,7 +74,7 @@ const createUser = asyncHandler(async (req, res) => {
   
     console.log(`User created ${user}`);
     if (user) {
-      res.status(201).json({ _id: user.id, email: user.email });
+      res.status(201).json({ _id: user.id, email: user.uwEmail });
     } else {
       res.status(400);
       throw new Error("User data is not valid");
@@ -99,7 +99,7 @@ const updateUserById = asyncHandler(async (req, res) => {
     // update each field iff provided
     const updatedFields = {
         ...(username && { username }),
-        ...(email && { email }),
+        ...(email && { uwEmail: email }),
         ...(hasPaid && { hasPaid }),
         ...(paymentMethod && { paymentMethod }),
         ...(paymentLocation && { paymentLocation }),
@@ -172,6 +172,8 @@ const checkInById = asyncHandler(async (req, res) => {
         throw new Error("Event Document not found");
     }
 
+    console.log(event.eventName)
+    console.log(eventName)
     if (bcrypt.compare(event.eventName, eventName)) {
         await User.findOneAndUpdate(
             { _id: id }, 
