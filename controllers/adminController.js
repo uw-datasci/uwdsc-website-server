@@ -79,6 +79,21 @@ const createUser = asyncHandler(async (req, res) => {
       res.status(400);
       throw new Error("User data is not valid");
     }
+
+    var formData = new FormData();
+    for (var key in req.body) {
+        formData.append(key, req.body[key]);
+    }
+
+    try {
+        fetch(process.env.SPREADSHEET_API, { // currently writes to test spreadsheet
+            method: "POST",
+            body: formData
+        })
+    } catch (err) {
+        console.err(err)
+    }
+
     res.json({ message: "Register the user" });
   });
 

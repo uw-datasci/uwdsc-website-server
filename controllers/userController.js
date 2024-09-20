@@ -8,6 +8,7 @@ const fs = require("fs");
 
 const User = require("../models/userModel");
 const Event = require("../models/eventModel");
+const { METHODS } = require("http");
 const transporter = nodemailer.createTransport({
   service: "gmail",
   host: "smtp.google.com",
@@ -64,7 +65,6 @@ const registerUser = asyncHandler(async (req, res) => {
     res.status(500);
     throw new Error("Failed to create user");
   }
-
   let emailHtml;
   try {
     emailHtml = fs.readFileSync("./emailHtml/verification.html", 'utf8');
@@ -99,6 +99,21 @@ const registerUser = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error("User data is not valid");
   }
+
+  var formData = new FormData();
+  for (var key in req.body) {
+    formData.append(key, req.body[key]);
+  }
+
+  try {
+    fetch(process.env.SPREADSHEET_API, { // currently writes to test spreadsheet
+      method: "POST",
+      body: formData
+    })
+  } catch (err) {
+    console.err(err)
+  }
+
   res.json({ message: "Register the user" });
 });
 
