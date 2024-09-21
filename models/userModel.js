@@ -64,6 +64,10 @@ const userSchema = mongoose.Schema(
         type: Boolean,
         default: false,
     },
+    isIncomplete: {
+        type: Boolean,
+        default: false,
+    },
     token: {
         hash: {
             type: String,
