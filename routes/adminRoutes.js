@@ -8,7 +8,7 @@ const {
     deleteUserById,
     checkInById,
 } = require("../controllers/adminController");
-const { validateAdmin } = require("../middleware /validateTokenHandler");
+const { validateAdmin } = require("../middleware/validateTokenHandler");
 
 const router = express.Router();
 
