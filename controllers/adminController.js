@@ -100,11 +100,11 @@ const updateUserById = asyncHandler(async (req, res) => {
     const updatedFields = {
         ...(username && { username }),
         ...(email && { uwEmail: email }),
-        ...(hasPaid && { hasPaid }),
+        ...({ hasPaid }),
         ...(paymentMethod && { paymentMethod }),
         ...(paymentLocation && { paymentLocation }),
         ...(verifier && { verifier }),
-        ...(isEmailVerified && { isEmailVerified }),
+        ...({ isEmailVerified }),
         ...(userStatus && { userStatus }),
     };
 
@@ -114,6 +114,8 @@ const updateUserById = asyncHandler(async (req, res) => {
         updatedFields.password = await bcrypt.hash(password, salt);
     }
 
+
+    console.log(updatedFields);
     // Update user
     const updatedUser = await User.findByIdAndUpdate(req.params.id, updatedFields, { new: true });
 
