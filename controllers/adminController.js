@@ -3,7 +3,19 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/userModel");
 const Event = require("../models/eventModel")
+const {google} = require("googleapis");
 
+
+const auth = new google.auth.GoogleAuth({
+    keyFile: "credentials.json",
+    scopes: "https://www.googleapis.com/auth/spreadsheets",
+});
+
+const client = auth.getClient();
+
+const googleSheets = google.sheets({ version: "v4", auth: client });
+
+const spreadsheetId = "1yAb0z03yDZmmepT7PZCcEZEhRlDLLRyYFsb1_6Ct58g"
 
 //@desc Get all users
 //@route GET /api/admin/getAllUsers
@@ -127,6 +139,80 @@ const updateUserById = asyncHandler(async (req, res) => {
     } else {
         res.status(400);
         throw new Error("Could not update user");
+    }
+    
+    // don't update: password, isEmailVerified, userStatus
+    // hit the googleapi endpoint here with the user edits.
+
+    const watIDs = await googleSheets.spreadsheets.values.get({
+        auth,
+        spreadsheetId,
+        range: "Sheet1!D:D" // watids are stored on column D
+    });
+
+    const rows = watIDs.data.values;
+
+    let rowIndex = -1;
+    for (let i = 0; i < rows.length; i++) {
+        if (rows[i][0] === user.watIAM) {
+            rowIndex = i + 1; // Add 1 because Google Sheets is 1-indexed
+            break;
+        }
+    }
+    // so rowIndex is the row number of the user in the google sheet
+    if (rowIndex !== -1) {
+        const requests = [
+            {
+                range: `Sheet1!D${rowIndex}`, // Update Column D
+                values: [[updatedUser.username]]
+            },
+            {
+                range: `Sheet1!E${rowIndex}`, // Update Column E
+                values: [[updatedUser.uwEmail]]
+            },
+            {
+                range: `Sheet1!O${rowIndex}`, // Update Column O
+                values: [[updatedUser.hasPaid]]
+            },
+            {
+                range: `Sheet1!J${rowIndex}`, // Update Column J
+                values: [[updatedUser.paymentMethod]]
+            },
+            {
+                range: `Sheet1!L${rowIndex}`, // Update Column L
+                values: [[updatedUser.paymentLocation]]
+            },
+            {
+                range: `Sheet1!M${rowIndex}`, // Update Column M
+                values: [[updatedUser.verifier]]
+            }
+        ];
+
+
+    const resource = {
+        valueInputOption: "USER_ENTERED",
+        data: requests
+    };
+        
+    console.log('Updating Google Sheet with:', {
+        username: updatedUser.username,
+        email: updatedUser.uwEmail,
+        hasPaid: updatedUser.hasPaid,
+        paymentMethod: updatedUser.paymentMethod,
+        paymentLocation: updatedUser.paymentLocation,
+        verifier: updatedUser.verifier
+    });
+
+    // Step 3: Execute batch update
+        await googleSheets.spreadsheets.values.batchUpdate({
+            auth,
+            spreadsheetId,
+            valueInputOption: "USER_ENTERED",
+            resource
+        });
+    }
+    else {
+        console.error("User not found in Google Sheet");
     }
 });
 
