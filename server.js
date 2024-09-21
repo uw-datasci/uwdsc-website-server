@@ -23,6 +23,7 @@ app.use(express.json());
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/hello", require("./routes/helloRoutes"));
+app.use("/api/resend-verification", require("./routes/verificationRoutes"));
 
 // Email sending route (wrapped in asyncHandler for error handling)
 app.get('/send-email', asyncHandler(async (req, res) => {

@@ -4,6 +4,6 @@ const { resendVerificationEmail } = require("../controllers/verificationControll
 const router = express.Router();
 
 // Route to resend verification email
-router.post("/resendVerification", resendVerificationEmail);
+router.post("/", resendVerificationEmail);
 
 module.exports = router;

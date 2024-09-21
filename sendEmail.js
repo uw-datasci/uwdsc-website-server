@@ -15,7 +15,7 @@ const sendVerificationEmail = async (user) => {
   // Set up email options
   const mailOptions = {
       from: 'membership-no-reply-f24@uwdatascience.ca', // Sender address
-      to: user.email, // List of receivers (you can replace this with a dynamic email address)
+      to: user.uwEmail, // List of receivers (you can replace this with a dynamic email address)
       subject: "Test Email", // Subject line
       text: "This is a test email!", // Plain text body
       html: "<p>This is a test email!</p>", // HTML body
