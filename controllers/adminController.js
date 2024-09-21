@@ -159,49 +159,58 @@ const updateUserById = asyncHandler(async (req, res) => {
             break;
         }
     }
+
     // so rowIndex is the row number of the user in the google sheet
     if (rowIndex !== -1) {
         const requests = [
             {
-                range: `Sheet1!D${rowIndex}`, // Update Column D
+                range: `Sheet1!D${rowIndex}`,
                 values: [[updatedUser.username]]
             },
             {
-                range: `Sheet1!E${rowIndex}`, // Update Column E
+                range: `Sheet1!E${rowIndex}`,
                 values: [[updatedUser.uwEmail]]
             },
-            {
-                range: `Sheet1!O${rowIndex}`, // Update Column O
-                values: [[updatedUser.hasPaid]]
+            { // set all payment columns to false for now, then update after
+                range: `Sheet1!J${rowIndex}`,
+                values: [[false]]
             },
             {
-                range: `Sheet1!J${rowIndex}`, // Update Column J
-                values: [[updatedUser.paymentMethod]]
+                range: `Sheet1!K${rowIndex}`,
+                values: [[false]]
             },
             {
-                range: `Sheet1!L${rowIndex}`, // Update Column L
+                range: `Sheet1!L${rowIndex}`,
+                values: [[false]]
+            },
+            {
+                range: `Sheet1!M${rowIndex}`,
+                values: [[updatedUser.verifier]]
+            },
+            {
+                range: `Sheet1!N${rowIndex}`,
                 values: [[updatedUser.paymentLocation]]
             },
             {
-                range: `Sheet1!M${rowIndex}`, // Update Column M
-                values: [[updatedUser.verifier]]
+                range: `Sheet1!O${rowIndex}`,
+                values: [[updatedUser.hasPaid]]
             }
         ];
+
+        // update the appropriated payment column
+        if (updatedUser.paymentMethod === "Cash") {
+            requests.push({ range: `Sheet1!J${rowIndex}`, values: [[true]] });
+        } else if (updatedUser.paymentMethod === "Online") {
+            requests.push({ range: `Sheet1!K${rowIndex}`, values: [[true]] });
+        } else if (updatedUser.paymentMethod === "MathSoc") {
+            requests.push({ range: `Sheet1!L${rowIndex}`, values: [[true]] });
+        }
 
 
     const resource = {
         valueInputOption: "USER_ENTERED",
         data: requests
     };
-        
-    console.log('Updating Google Sheet with:', {
-        username: updatedUser.username,
-        email: updatedUser.uwEmail,
-        hasPaid: updatedUser.hasPaid,
-        paymentMethod: updatedUser.paymentMethod,
-        paymentLocation: updatedUser.paymentLocation,
-        verifier: updatedUser.verifier
-    });
 
     // Step 3: Execute batch update
         await googleSheets.spreadsheets.values.batchUpdate({
