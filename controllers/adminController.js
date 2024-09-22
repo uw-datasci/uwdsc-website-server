@@ -174,16 +174,13 @@ const checkInById = asyncHandler(async (req, res) => {
         throw new Error("Event Document not found");
     }
 
-    console.log(event.eventName)
-    console.log(eventName)
-    if (bcrypt.compare(event.eventName, eventName)) {
+    if (await bcrypt.compare(event.eventName, eventName)) {
         await User.findOneAndUpdate(
             { _id: id }, 
             { isCheckedIn: true });
-          res.status(200).json({ message: "User checked in!"});
+        res.status(200).json({ message: "User checked in!"});
     } else {
-        res.status(401);
-        throw new Error("Event hash does not match");
+        res.status(401).json({ message: "Event hash does not match"});
     }
 
 
