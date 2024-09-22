@@ -262,6 +262,8 @@ const resetPassword = asyncHandler(async (req, res) => {
 //@route POST /api/users/login
 //@access public
 const loginUser = asyncHandler(async (req, res) => {
+  console.log("log in called")
+
   const { email, password } = req.body;
   if (!email || !password) {
     res.status(400);
@@ -275,6 +277,9 @@ const loginUser = asyncHandler(async (req, res) => {
     console.log(err);
   }
 
+
+  console.log("found user")
+
   if (!user) {
     res.status(404);
     throw new Error("Email is not found");
@@ -284,6 +289,7 @@ const loginUser = asyncHandler(async (req, res) => {
     res.status(401);
     throw new Error("The email for this account has not been verified.");
   }
+  console.log("before logged in")
 
   //compare password with hashedpassword
   if (await bcrypt.compare(password, user.password)) {
