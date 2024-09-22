@@ -1,5 +1,6 @@
 const User = require("../models/userModel"); 
 const sendVerificationEmail = require("../util/sendEmail"); // Utility to send emails
+const dotenv = require("dotenv").config();
 
 // Controller to handle resend verification email
 const resendVerificationEmail = async (req, res) => {

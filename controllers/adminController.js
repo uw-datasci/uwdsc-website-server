@@ -2,7 +2,8 @@ const asyncHandler = require("express-async-handler");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/userModel");
-const Event = require("../models/eventModel")
+const Event = require("../models/eventModel");
+const dotenv = require("dotenv").config();
 
 
 //@desc Get all users

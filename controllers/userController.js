@@ -5,6 +5,7 @@ const expires = require("expires")
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const fs = require("fs");
+const dotenv = require("dotenv").config();
 
 const User = require("../models/userModel");
 const Event = require("../models/eventModel");

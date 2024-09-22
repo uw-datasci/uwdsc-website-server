@@ -1,5 +1,6 @@
 const nodemailer = require("nodemailer");
 const fs = require("fs");
+const dotenv = require("dotenv").config();
 
 const sendVerificationEmail = async (user) => {
   const verificationLink = `https://yourdomain.com/verify-email?token=${user.verificationToken}`;
