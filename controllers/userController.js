@@ -299,6 +299,7 @@ const loginUser = asyncHandler(async (req, res) => {
       process.env.ACCESS_TOKEN_SECRET,
       { expiresIn: "3d" }
     );
+    console.log("logged in")
     res.status(200).json({ accessToken: accessToken, name: user.username });
   } else {
     res.status(401);
