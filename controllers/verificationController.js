@@ -1,5 +1,5 @@
 const User = require("../models/userModel"); 
-const sendVerificationEmail = require("../sendEmail"); // Utility to send emails
+const sendVerificationEmail = require("../util/sendEmail"); // Utility to send emails
 
 // Controller to handle resend verification email
 const resendVerificationEmail = async (req, res) => {
@@ -22,7 +22,11 @@ const resendVerificationEmail = async (req, res) => {
     }
 
     // Resend verification email (assuming a utility function)
-    await sendVerificationEmail(user);
+    const emailSent = await sendVerificationEmail(user);
+
+    if (!emailSent.success) {
+      throw new Error(emailSent.message);
+    }
 
     res.status(200).json({ message: "Verification email sent successfully" });
   } catch (error) {

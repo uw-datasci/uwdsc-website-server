@@ -1,4 +1,5 @@
 const nodemailer = require("nodemailer");
+const fs = require("fs");
 
 const sendVerificationEmail = async (user) => {
   const verificationLink = `https://yourdomain.com/verify-email?token=${user.verificationToken}`;
@@ -12,14 +13,25 @@ const sendVerificationEmail = async (user) => {
     },
   });
 
+  let emailHtml;
+  try {
+    emailHtml = fs.readFileSync("./emailHtml/verification.html", 'utf8');
+    emailHtml = emailHtml.replace("<custom-link>", `${process.env.WEBSITE_URL}account/verification?id=${user.id}&token=${user.token.hash}`)
+  } catch (error) {
+    console.error("Error sending email:", error);
+    return { success: false, message: `Error: ${error.message}` };
+  }
+
   // Set up email options
   const mailOptions = {
-      from: 'membership-no-reply-f24@uwdatascience.ca', // Sender address
-      to: user.uwEmail, // List of receivers (you can replace this with a dynamic email address)
-      subject: "Test Email", // Subject line
-      text: "This is a test email!", // Plain text body
-      html: "<p>This is a test email!</p>", // HTML body
-    };
+    from: {
+      name: "DSC Automated Mail",
+      address: "membership-no-reply-f24@uwdatascience.ca"
+    },
+    to: user.uwEmail,
+    subject: "DSC Account Verification",
+    html: emailHtml
+  }
   
   // Send the email
   try {

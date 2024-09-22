@@ -3,7 +3,7 @@ const connectDb = require("./config/dbConnection");
 const errorHandler = require("./middleware/errorHandler");
 const dotenv = require("dotenv").config();
 const cors = require('cors');
-const sendEmail = require('./sendEmail');
+const sendEmail = require('./util/sendEmail');
 const asyncHandler = require('express-async-handler');
 
 connectDb();
