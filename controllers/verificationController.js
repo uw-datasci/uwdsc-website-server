@@ -19,6 +19,8 @@ const resendVerificationEmail = async (req, res) => {
 
     if (user.isEmailVerified) {
       return res.status(400).json({ message: "User is already verified" });
+    } else {
+      console.log("Resent Email Verification")
     }
 
     // Resend verification email (assuming a utility function)

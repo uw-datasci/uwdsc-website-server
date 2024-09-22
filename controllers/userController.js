@@ -69,11 +69,14 @@ const registerUser = asyncHandler(async (req, res) => {
   try {
     emailHtml = fs.readFileSync("./emailHtml/verification.html", 'utf8');
     emailHtml = emailHtml.replace("<custom-link>", `${process.env.WEBSITE_URL}account/verification?id=${user.id}&token=${token}`)
+    emailHtml = emailHtml.replace("<custom-email>", email)
   } catch (err) {
     console.error('Error reading file:', err);
     res.status(500);
     throw new Error("Failed to read email HTML");
   }
+
+  console.log(__dirname)
 
   await transporter.sendMail({
     from: {
@@ -82,7 +85,12 @@ const registerUser = asyncHandler(async (req, res) => {
     },
     to: email,
     subject: "DSC Account Verification",
-    html: emailHtml
+    html: emailHtml,
+    attachments: [{
+      filename: "dsc.svg",
+      path: __dirname + "/../emailHtml/dsc.svg",
+      cid: "logo" //same cid value as in the html img src
+    }]
   }).then(() => {
     console.log("Verification email Sent")
   }).catch(err => {
@@ -179,6 +187,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
   try {
     emailHtml = fs.readFileSync("./emailHtml/forgotpassword.html", 'utf8');
     emailHtml = emailHtml.replace("<custom-link>", `${process.env.WEBSITE_URL}account/resetPassword?id=${user.id}&token=${token}`)
+    emailHtml = emailHtml.replace("<custom-email>", email)
   } catch (err) {
     console.error('Error reading file:', err);
   }
@@ -195,7 +204,12 @@ const forgotPassword = asyncHandler(async (req, res) => {
     },
     to: email,
     subject: "Reset DSC Account Password",
-    html: emailHtml
+    html: emailHtml,
+    attachments: [{
+      filename: "dsc.svg",
+      path: __dirname + "/../emailHtml/dsc.svg",
+      cid: "logo" //same cid value as in the html img src
+    }]
   }).then(() => {
     console.log("Forgot password email Sent")
     res.status(200).json({ message: "Forgot email sent"});

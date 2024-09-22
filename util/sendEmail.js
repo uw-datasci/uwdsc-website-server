@@ -30,7 +30,12 @@ const sendVerificationEmail = async (user) => {
     },
     to: user.uwEmail,
     subject: "DSC Account Verification",
-    html: emailHtml
+    html: emailHtml,
+    attachments: [{
+      filename: "dsc.svg",
+      path: __dirname + "/../emailHtml/dsc.svg",
+      cid: "logo" //same cid value as in the html img src
+    }]
   }
   
   // Send the email
