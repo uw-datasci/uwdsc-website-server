@@ -287,7 +287,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
   //compare password with hashedpassword
   if (await bcrypt.compare(password, user.password)) {
-    const accessToken = jwt.sign(
+    const accessToken = await jwt.sign(
       {
         user: {
           username: user.username,
