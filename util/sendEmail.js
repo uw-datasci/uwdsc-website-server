@@ -8,8 +8,8 @@ const sendVerificationEmail = async (user) => {
   const transporter = nodemailer.createTransport({
     service: "gmail", // or any other email service
     auth: {
-      user: 'membership-no-reply-f24@uwdatascience.ca',
-      pass: 'tkkg sqqd glva gpmp'
+      user: process.env.EMAIL_USER,
+      pass: process.env.APPLICATION_PASSWORD
     },
   });
 

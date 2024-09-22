@@ -14,7 +14,7 @@ const transporter = nodemailer.createTransport({
   port: 465,
   secure: true,
   auth: {
-    user: "membership-no-reply-f24@uwdatascience.ca",
+    user: process.env.EMAIL_USER,
     pass: process.env.APPLICATION_PASSWORD
   }
 })
