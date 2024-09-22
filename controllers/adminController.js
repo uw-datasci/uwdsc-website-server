@@ -143,11 +143,10 @@ const updateUserById = asyncHandler(async (req, res) => {
     
     // don't update: password, isEmailVerified, userStatus
     // hit the googleapi endpoint here with the user edits.
-
     const watIDs = await googleSheets.spreadsheets.values.get({
         auth,
         spreadsheetId,
-        range: "Sheet1!D:D" // watids are stored on column D
+        range: "Sheet1!D:D" // watIDs are stored on column D
     });
 
     const rows = watIDs.data.values;
@@ -206,13 +205,11 @@ const updateUserById = asyncHandler(async (req, res) => {
             requests.push({ range: `Sheet1!L${rowIndex}`, values: [[true]] });
         }
 
-
     const resource = {
         valueInputOption: "USER_ENTERED",
         data: requests
     };
 
-    // Step 3: Execute batch update
         await googleSheets.spreadsheets.values.batchUpdate({
             auth,
             spreadsheetId,
