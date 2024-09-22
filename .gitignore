@@ -5,3 +5,7 @@ node_modules/
 .env
 .env.local
 .env.*.local
+
+#DB migration ignores
+*.csv
+util/importErrors/
