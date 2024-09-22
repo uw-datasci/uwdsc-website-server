@@ -1,7 +1,7 @@
-const express = require('express');
+const express = require("express");
 const connectDb = require("./config/dbConnection");
 const errorHandler = require("./middleware/errorHandler");
-const cors = require('cors');
+const cors = require("cors");
 
 connectDb();
 const app = express();
