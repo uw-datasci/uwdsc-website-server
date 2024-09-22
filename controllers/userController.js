@@ -62,8 +62,8 @@ const registerUser = asyncHandler(async (req, res) => {
     console.log(`User created ${user}`);
   } catch (err) {
     console.log(err);
-    res.status(500);
-    throw new Error("Failed to create user");
+    res.status(500)
+    throw new Error("User already registered!");
   }
 
   let emailHtml;

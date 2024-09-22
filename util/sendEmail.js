@@ -18,6 +18,7 @@ const sendVerificationEmail = async (user) => {
   try {
     emailHtml = fs.readFileSync("./emailHtml/verification.html", 'utf8');
     emailHtml = emailHtml.replace("<custom-link>", `${process.env.WEBSITE_URL}account/verification?id=${user.id}&token=${user.token.hash}`)
+    emailHtml = emailHtml.replace("<custom-email>", user.email)
   } catch (error) {
     console.error("Error sending email:", error);
     return { success: false, message: `Error: ${error.message}` };
