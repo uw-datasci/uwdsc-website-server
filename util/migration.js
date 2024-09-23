@@ -96,6 +96,7 @@ const parseCSVRow = (csvRow) => {
         paymentLocation: csvRow[PAYMENT_LOCATION],
         userStatus: "member",
         password: hash,
+        isEmailVerified: true,
         hasPaid,
         paymentMethod,
         isIncomplete
