@@ -102,9 +102,9 @@ const updateUserById = asyncHandler(async (req, res) => {
         ...(username && { username }),
         ...(email && { uwEmail: email }),
         ...({ hasPaid }),
-        ...(paymentMethod && { paymentMethod }),
-        ...(paymentLocation && { paymentLocation }),
-        ...(verifier && { verifier }),
+        ...(paymentMethod && { paymentMethod: (paymentMethod == "EMPTY_FIELD"? "" : paymentMethod) }),
+        ...(verifier && { verifier: (verifier == "EMPTY_FIELD"? "" : verifier) }),
+        ...(paymentLocation && { paymentLocation: (paymentLocation == "EMPTY_FIELD"? "" : paymentLocation) }),
         ...({ isEmailVerified }),
         ...(userStatus && { userStatus }),
     };

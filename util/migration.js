@@ -85,9 +85,9 @@ const parseCSVRow = (csvRow) => {
 
     return {
         createdAt: csvRow[CREATED_AT],
-        uwEmail: csvRow[WATERLOO_EMAIL],
+        uwEmail: csvRow[WATERLOO_EMAIL].toLowerCase().trim(),
         username: csvRow[USERNAME],
-        watIAM: csvRow[WATIAM],
+        watIAM: csvRow[WATIAM].toLowerCase().trim(),
         faculty: faculty,
         term: csvRow[TERM],
         memberIdeas: csvRow[MEMBER_IDEAS],

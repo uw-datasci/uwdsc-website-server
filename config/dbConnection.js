@@ -4,7 +4,7 @@ const dotenv = require("dotenv").config();
 
 const connectDb = async () => {
   try {
-    const connect = await mongoose.connect(`${process.env.MONGODB_CONNECTION_STR}membershipSystem`);
+    const connect = await mongoose.connect(`${process.env.MONGODB_CONNECTION_STR}`);
     console.log(
       "Database connected: ",
       connect.connection.host,
