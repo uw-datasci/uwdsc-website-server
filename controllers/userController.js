@@ -328,7 +328,7 @@ const getQr = asyncHandler(async (req, res) => {
   const id = req.user.id;
   let event;
   try {
-    event = await Event.findOne({ _id: "66e7be7a0efdeac0ca2b6644" });
+    event = await Event.findOne({ _id: process.env.EVENT_ID });
   } catch (err) {
     console.err(err);
   }
