@@ -1,7 +1,7 @@
 const asyncHandler = require("express-async-handler");
-const {v4: uuidv4} = require("uuid");
+const { v4: uuidv4 } = require("uuid");
 const bcrypt = require("bcrypt");
-const expires = require("expires")
+const expires = require("expires");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const fs = require("fs");
@@ -16,16 +16,33 @@ const transporter = nodemailer.createTransport({
   secure: true,
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.APPLICATION_PASSWORD
-  }
-})
+    pass: process.env.APPLICATION_PASSWORD,
+  },
+});
 
 //@desc Register a user
 //@route POST /api/users/register
 //@access public
 const registerUser = asyncHandler(async (req, res) => {
-  const { username, email, password, watIAM, faculty, term, heardFromWhere, memberIdeas } = req.body;
-  if (!username || !email || !password || !watIAM || !faculty || !term || !heardFromWhere) {
+  const {
+    username,
+    email,
+    password,
+    watIAM,
+    faculty,
+    term,
+    heardFromWhere,
+    memberIdeas,
+  } = req.body;
+  if (
+    !username ||
+    !email ||
+    !password ||
+    !watIAM ||
+    !faculty ||
+    !term ||
+    !heardFromWhere
+  ) {
     res.status(400);
     throw new Error("All fields are mandatory!");
   }
@@ -56,51 +73,59 @@ const registerUser = asyncHandler(async (req, res) => {
       memberIdeas: memberIdeas,
       token: {
         hash: token,
-        expires: expiry
-      }
+        expires: expiry,
+      },
     });
     console.log(`User created ${user}`);
   } catch (err) {
     console.log(err);
-    res.status(500)
+    res.status(500);
     throw new Error("User already registered!");
   }
 
   let emailHtml;
   try {
-    emailHtml = fs.readFileSync("./emailHtml/verification.html", 'utf8');
-    emailHtml = emailHtml.replace("<custom-link>", `${process.env.WEBSITE_URL}account/verification?id=${user.id}&token=${token}`)
-    emailHtml = emailHtml.replace("<custom-email>", email)
+    emailHtml = fs.readFileSync("./emailHtml/verification.html", "utf8");
+    emailHtml = emailHtml.replace(
+      "<custom-link>",
+      `${process.env.WEBSITE_URL}account/verification?id=${user.id}&token=${token}`
+    );
+    emailHtml = emailHtml.replace("<custom-email>", email);
   } catch (err) {
-    console.error('Error reading file:', err);
+    console.error("Error reading file:", err);
     res.status(500);
     throw new Error("Failed to read email HTML");
   }
 
-  console.log(__dirname)
+  console.log(__dirname);
 
-  await transporter.sendMail({
-    from: {
-      name: "DSC Automated Mail",
-      address: "membership-no-reply-f24@uwdatascience.ca"
-    },
-    to: email,
-    subject: "DSC Account Verification",
-    html: emailHtml,
-    attachments: [{
-      filename: "dsc.svg",
-      path: __dirname + "/../emailHtml/dsc.svg",
-      cid: "logo" //same cid value as in the html img src
-    }]
-  }).then(() => {
-    console.log("Verification email Sent")
-  }).catch(err => {
-    console.err(err)
-    //Add process to delete user generated above
+  await transporter
+    .sendMail({
+      from: {
+        name: "DSC Automated Mail",
+        address: "membership-no-reply-f24@uwdatascience.ca",
+      },
+      to: email,
+      subject: "DSC Account Verification",
+      html: emailHtml,
+      attachments: [
+        {
+          filename: "dsc.svg",
+          path: __dirname + "/../emailHtml/dsc.svg",
+          cid: "logo", //same cid value as in the html img src
+        },
+      ],
+    })
+    .then(() => {
+      console.log("Verification email Sent");
+    })
+    .catch((err) => {
+      console.err(err);
+      //Add process to delete user generated above
 
-    res.status(500);
-    throw new Error("Email was not able to be sent");
-  })
+      res.status(500);
+      throw new Error("Email was not able to be sent");
+    });
 
   if (user) {
     res.status(201).json({ _id: user.id, email: user.email });
@@ -128,23 +153,25 @@ const verifyUser = asyncHandler(async (req, res) => {
     throw new Error("Document id not found");
   }
 
-  console.log(user)
+  console.log(user);
   if (user.token.hash == token && !expires.expired(user.token.expiry)) {
     await User.findOneAndUpdate(
-      { _id: id }, 
-      { isEmailVerified: true, 
+      { _id: id },
+      {
+        isEmailVerified: true,
         token: {
           hash: "",
-          expires: -1
-        }
-      });
+          expires: -1,
+        },
+      }
+    );
     res.status(200);
   } else {
     res.status(400);
     throw new Error("Token hash does not match or has expired");
   }
   res.json({ message: "Verified the user" });
-})
+});
 
 //@desc Forgot password route
 //@route POST /api/users/verify/:id
@@ -169,11 +196,14 @@ const forgotPassword = asyncHandler(async (req, res) => {
   let isUpdated = false;
   try {
     await User.findOneAndUpdate(
-      { _id: user.id }, 
-      { token: {
-        hash: token,
-        expires: expiry
-      }})
+      { _id: user.id },
+      {
+        token: {
+          hash: token,
+          expires: expiry,
+        },
+      }
+    );
     isUpdated = true;
   } catch (err) {
     console.log(err);
@@ -183,14 +213,17 @@ const forgotPassword = asyncHandler(async (req, res) => {
     res.status(500);
     throw new Error("Unable to update token");
   }
-  
+
   let emailHtml;
   try {
-    emailHtml = fs.readFileSync("./emailHtml/forgotpassword.html", 'utf8');
-    emailHtml = emailHtml.replace("<custom-link>", `${process.env.WEBSITE_URL}account/resetPassword?id=${user.id}&token=${token}`)
-    emailHtml = emailHtml.replace("<custom-email>", email)
+    emailHtml = fs.readFileSync("./emailHtml/forgotpassword.html", "utf8");
+    emailHtml = emailHtml.replace(
+      "<custom-link>",
+      `${process.env.WEBSITE_URL}account/resetPassword?id=${user.id}&token=${token}`
+    );
+    emailHtml = emailHtml.replace("<custom-email>", email);
   } catch (err) {
-    console.error('Error reading file:', err);
+    console.error("Error reading file:", err);
   }
 
   if (!emailHtml) {
@@ -198,28 +231,33 @@ const forgotPassword = asyncHandler(async (req, res) => {
     throw new Error("Failed to read email HTML");
   }
 
-  await transporter.sendMail({
-    from: {
-      name: "DSC Automated Mail",
-      address: "membership-no-reply-f24@uwdatascience.ca"
-    },
-    to: email,
-    subject: "Reset DSC Account Password",
-    html: emailHtml,
-    attachments: [{
-      filename: "dsc.svg",
-      path: __dirname + "/../emailHtml/dsc.svg",
-      cid: "logo" //same cid value as in the html img src
-    }]
-  }).then(() => {
-    console.log("Forgot password email Sent")
-    res.status(200).json({ message: "Forgot email sent"});
-  }).catch(err => {
-    console.err(err);
-    res.status(500);
-    throw new Error("Email was not able to be sent");
-  })
-})
+  await transporter
+    .sendMail({
+      from: {
+        name: "DSC Automated Mail",
+        address: "membership-no-reply-f24@uwdatascience.ca",
+      },
+      to: email,
+      subject: "Reset DSC Account Password",
+      html: emailHtml,
+      attachments: [
+        {
+          filename: "dsc.svg",
+          path: __dirname + "/../emailHtml/dsc.svg",
+          cid: "logo", //same cid value as in the html img src
+        },
+      ],
+    })
+    .then(() => {
+      console.log("Forgot password email Sent");
+      res.status(200).json({ message: "Forgot email sent" });
+    })
+    .catch((err) => {
+      console.err(err);
+      res.status(500);
+      throw new Error("Email was not able to be sent");
+    });
+});
 
 //@desc Reset member password
 //@route POST /api/users/resetPass
@@ -235,35 +273,36 @@ const resetPassword = asyncHandler(async (req, res) => {
   } catch (err) {
     console.log(err);
   }
-  
+
   if (!user) {
     res.status(404);
     throw new Error("Document id not found");
   }
-``
-  console.log(user)
+  ``;
+  console.log(user);
   if (user.token.hash == token && !expires.expired(user.token.expiry)) {
     await User.findOneAndUpdate(
-      { _id: id }, 
-      { password: hashedPassword, 
+      { _id: id },
+      {
+        password: hashedPassword,
         token: {
           hash: "",
-          expires: -1
-        }
-      });
-    res.status(200).json({ message: "Password reseted."});
+          expires: -1,
+        },
+      }
+    );
+    res.status(200).json({ message: "Password reseted." });
   } else {
     res.status(400);
     throw new Error("Token hash does not match or has expired");
   }
-
-})
+});
 
 //@desc Login user
 //@route POST /api/users/login
 //@access public
 const loginUser = asyncHandler(async (req, res) => {
-  console.log("log in called")
+  console.log("log in called");
 
   const { email, password } = req.body;
   if (!email || !password) {
@@ -278,8 +317,7 @@ const loginUser = asyncHandler(async (req, res) => {
     console.log(err);
   }
 
-
-  console.log("found user")
+  console.log("found user");
 
   if (!user) {
     res.status(404);
@@ -290,7 +328,7 @@ const loginUser = asyncHandler(async (req, res) => {
     res.status(401);
     throw new Error("The email for this account has not been verified.");
   }
-  console.log("before logged in")
+  console.log("before logged in");
 
   //compare password with hashedpassword
   if (await bcrypt.compare(password, user.password)) {
@@ -306,8 +344,13 @@ const loginUser = asyncHandler(async (req, res) => {
       process.env.ACCESS_TOKEN_SECRET,
       { expiresIn: "3d" }
     );
-    console.log("logged in")
-    res.status(200).json({ accessToken: accessToken, name: user.username });
+    console.log(user.userStatus);
+    console.log("logged in");
+    res.status(200).json({
+      accessToken: accessToken,
+      name: user.username,
+      isAdmin: user.userStatus === "admin" ? true : false,
+    });
   } else {
     res.status(401);
     throw new Error("Email or password is not valid");
@@ -337,7 +380,17 @@ const getQr = asyncHandler(async (req, res) => {
     throw new Error("Event Document not found");
   }
 
-  res.status(200).json({id: id, eventName: await bcrypt.hash(event.eventName, 10)});
+  res
+    .status(200)
+    .json({ id: id, eventName: await bcrypt.hash(event.eventName, 10) });
 });
 
-module.exports = { registerUser, loginUser, verifyUser, forgotPassword, resetPassword, currentUser, getQr };
+module.exports = {
+  registerUser,
+  loginUser,
+  verifyUser,
+  forgotPassword,
+  resetPassword,
+  currentUser,
+  getQr,
+};
