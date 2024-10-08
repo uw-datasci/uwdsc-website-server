@@ -349,7 +349,7 @@ const loginUser = asyncHandler(async (req, res) => {
     res.status(200).json({
       accessToken: accessToken,
       name: user.username,
-      isAdmin: user.userStatus === "admin" ? true : false,
+      role: user.userStatus,
     });
   } else {
     res.status(401);
