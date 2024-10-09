@@ -278,7 +278,7 @@ const resetPassword = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("Document id not found");
   }
-  ``;
+  
   console.log(user);
   if (user.token.hash == token && !expires.expired(user.token.expiry)) {
     await User.findOneAndUpdate(
