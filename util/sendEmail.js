@@ -30,7 +30,7 @@ const sendVerificationEmail = async (user) => {
       name: "DSC Automated Mail",
       address: "membership-no-reply-f24@uwdatascience.ca"
     },
-    to: user.uwEmail,
+    to: user.email,
     subject: "DSC Account Verification",
     html: emailHtml,
     attachments: [{

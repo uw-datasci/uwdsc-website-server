@@ -64,7 +64,7 @@ const registerUser = asyncHandler(async (req, res) => {
   try {
     user = await User.create({
       username: username,
-      uwEmail: email,
+      email: email,
       password: hashedPassword,
       watIAM: watIAM,
       faculty: faculty,
@@ -181,7 +181,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
   let user;
   try {
-    user = await User.findOne({ uwEmail: email });
+    user = await User.findOne({ email: email });
   } catch (err) {
     console.log(err);
     res.status(404);
@@ -312,7 +312,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
   let user;
   try {
-    user = await User.findOne({ uwEmail: email });
+    user = await User.findOne({ email: email });
   } catch (err) {
     console.log(err);
   }
