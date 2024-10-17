@@ -20,7 +20,7 @@ const getAllUsers = asyncHandler(async (req, res) => {
 //@access Private
 const getUserByEmail = asyncHandler(async (req, res) => {
     const email = req.params.email; // Extracting email from URL parameters
-    const user = await User.findOne({ uwEmail: email });
+    const user = await User.findOne({ email: email });
     res.status(200).json(user);
 });
 
@@ -57,7 +57,7 @@ const createUser = asyncHandler(async (req, res) => {
     try {
         user = await User.create({
             username: username,
-            uwEmail: email,
+            email: email,
             password: hashedPassword,
             watIAM: watIAM,
             faculty: faculty,
@@ -75,7 +75,7 @@ const createUser = asyncHandler(async (req, res) => {
   
     console.log(`User created ${user}`);
     if (user) {
-      res.status(201).json({ _id: user.id, email: user.uwEmail });
+      res.status(201).json({ _id: user.id, email: user.email });
     } else {
       res.status(400);
       throw new Error("User data is not valid");
@@ -100,7 +100,7 @@ const updateUserById = asyncHandler(async (req, res) => {
     // update each field iff provided
     const updatedFields = {
         ...(username && { username }),
-        ...(email && { uwEmail: email }),
+        ...(email && { email }),
         ...({ hasPaid }),
         ...(paymentMethod && { paymentMethod: (paymentMethod == "EMPTY_FIELD"? "" : paymentMethod) }),
         ...(verifier && { verifier: (verifier == "EMPTY_FIELD"? "" : verifier) }),
