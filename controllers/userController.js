@@ -34,7 +34,18 @@ const registerUser = asyncHandler(async (req, res) => {
     heardFromWhere,
     memberIdeas,
   } = req.body;
-
+  if (
+    !username ||
+    !email ||
+    !password ||
+    !watIAM ||
+    !faculty ||
+    !term ||
+    !heardFromWhere
+  ) {
+    res.status(400);
+    throw new Error("All fields are mandatory!");
+  }
   const userAvailable = await User.findOne({ email });
   if (userAvailable) {
     res.status(400);
@@ -42,111 +53,35 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   //Generate hashed password, token, and expiry
-  console.log("Generating verification token...")
   const hashedPassword = await bcrypt.hash(password, 10);
   const token = uuidv4();
   const expiry = expires.after("1 hours");
-  console.log("Verification token generated.")
+  console.log("Hashed Password: ", hashedPassword);
+  console.log("Token: ", token);
+  console.log("Expiry: ", expiry);
 
-  console.log("Creating user...")
-  const user = await User.create({
-    username: username,
-    email: email,
-    password: hashedPassword,
-    watIAM: watIAM,
-    faculty: faculty,
-    term: term,
-    heardFromWhere: heardFromWhere,
-    memberIdeas: memberIdeas,
-    token: {
-      hash: token,
-      expires: expiry,
-    },
-  });
-
-  if (!user) {
-    res.status(500);
-    throw new Error("There was an issue creating your account.");
-  }
-  console.log(`User created ${user}`);
-  res.status(201).json({ _id: user.id, email: user.email });
-
-});
-
-//@desc Login user
-//@route POST /api/users/login
-//@access public
-const loginUser = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
-
-  let user = await User.findOne({ email: email });
-  if (!user) {
-    res.status(404)
-    throw Error("Unable to find user.")
-  }
-
-  if (!user.isEmailVerified) {
-    res.status(401);
-    throw new Error("The email for this account has not been verified.");
-  }
-
-  //compare password with hashedpassword
-  if (await bcrypt.compare(password, user.password)) {
-    const accessToken = await jwt.sign(
-      {
-        user: {
-          username: user.username,
-          email: user.email,
-          id: user.id,
-          userStatus: user.userStatus,
-        },
-      },
-      process.env.ACCESS_TOKEN_SECRET,
-      { expiresIn: "120d" }
-    );
-    res.status(200).json({
-      accessToken: accessToken,
-      name: user.username,
-      role: user.userStatus,
-    });
-  } else {
-    res.status(401);
-    throw new Error("Email or password is not valid.");
-  }
-});
-
-//@desc Sends the verification email
-//@route POST /api/users/sendVerification
-//@access public
-const sendVerificationEmail = asyncHandler(async (req, res) => {
-  const { email } = req.body;
-
-  let user = await User.findOne({ email: email });
-  if (!user) {
-    res.status(404);
-    throw Error("Unable to find user.")
-  }
-
-  if (user.isEmailVerified) {
-    res.status(400);
-    throw Error("Email is already verified.")
-  }
-
-  console.log("Generating verification token...")
-  const token = uuidv4();
-  const expiry = expires.after("1 hours");
-  console.log("Verification token generated.")
-
-  await User.findOneAndUpdate(
-    { _id: user.id },
-    {
-      isEmailVerified: true,
+  var user;
+  try {
+    user = await User.create({
+      username: username,
+      email: email,
+      password: hashedPassword,
+      watIAM: watIAM,
+      faculty: faculty,
+      term: term,
+      heardFromWhere: heardFromWhere,
+      memberIdeas: memberIdeas,
       token: {
         hash: token,
         expires: expiry,
       },
-    }
-  );
+    });
+    console.log(`User created ${user}`);
+  } catch (err) {
+    console.log(err);
+    res.status(500);
+    throw new Error("User already registered!");
+  }
 
   let emailHtml;
   try {
@@ -156,14 +91,14 @@ const sendVerificationEmail = asyncHandler(async (req, res) => {
       `${process.env.WEBSITE_URL}account/verification?id=${user.id}&token=${token}`
     );
     emailHtml = emailHtml.replace("<custom-email>", email);
-    console.log("Email generated.")
   } catch (err) {
     console.error("Error reading file:", err);
     res.status(500);
-    throw new Error("Failed to read verfication email HTML.");
+    throw new Error("Failed to read email HTML");
   }
 
-  console.log("Sending verification email...")
+  console.log(__dirname);
+
   await transporter
     .sendMail({
       from: {
@@ -183,43 +118,102 @@ const sendVerificationEmail = asyncHandler(async (req, res) => {
     })
     .then(() => {
       console.log("Verification email Sent");
-      res.status(200).json({ message: "Verification email sent" });
     })
     .catch((err) => {
       console.err(err);
+      //Add process to delete user generated above
+
       res.status(500);
-      throw new Error("Verification email was not able to be sent.");
+      throw new Error("Email was not able to be sent");
     });
+
+  if (user) {
+    res.status(201).json({ _id: user.id, email: user.email });
+  } else {
+    res.status(400);
+    throw new Error("User data is not valid");
+  }
+  res.json({ message: "Register the user" });
 });
 
-//@desc Sends the forgot password email
-//@route POST /api/users/forgotPass
+//@desc Verify user
+//@route POST /api/users/verifyUser
 //@access public
-const sendForgotPasswordEmail = asyncHandler(async (req, res) => {
-  const { email } = req.body;
-
-  let user = await User.findOne({ email: email });
-  if (!user) {
-    res.status(404)
-    throw Error("Unable to find user.")
+const verifyUser = asyncHandler(async (req, res) => {
+  const { id, token } = req.body;
+  let user;
+  try {
+    user = await User.findOne({ _id: id });
+  } catch (err) {
+    console.log(err);
   }
 
-  console.log("Generating forgot password token...")
+  if (!user) {
+    res.status(404);
+    throw new Error("Document id not found");
+  }
+
+  console.log(user);
+  if (user.token.hash == token && !expires.expired(user.token.expiry)) {
+    await User.findOneAndUpdate(
+      { _id: id },
+      {
+        isEmailVerified: true,
+        token: {
+          hash: "",
+          expires: -1,
+        },
+      }
+    );
+    res.status(200);
+  } else {
+    res.status(400);
+    throw new Error("Token hash does not match or has expired");
+  }
+  res.json({ message: "Verified the user" });
+});
+
+//@desc Forgot password route
+//@route POST /api/users/verify/:id
+//@access public
+const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  let user;
+  try {
+    user = await User.findOne({ email: email });
+  } catch (err) {
+    console.log(err);
+    res.status(404);
+    throw new Error("Email is not found");
+  }
+
   const token = uuidv4();
   const expiry = expires.after("10 minutes");
-  console.log("Token generated.")
+  console.log("Token: ", token);
+  console.log("Expiry: ", expiry);
 
-  await User.findOneAndUpdate(
-    { _id: user.id },
-    {
-      token: {
-        hash: token,
-        expires: expiry,
-      },
-    }
-  );
+  let isUpdated = false;
+  try {
+    await User.findOneAndUpdate(
+      { _id: user.id },
+      {
+        token: {
+          hash: token,
+          expires: expiry,
+        },
+      }
+    );
+    isUpdated = true;
+  } catch (err) {
+    console.log(err);
+  }
 
-  console.log("Generating forgot password email...")
+  if (!isUpdated) {
+    res.status(500);
+    throw new Error("Unable to update token");
+  }
+
   let emailHtml;
   try {
     emailHtml = fs.readFileSync("./emailHtml/forgotpassword.html", "utf8");
@@ -228,14 +222,15 @@ const sendForgotPasswordEmail = asyncHandler(async (req, res) => {
       `${process.env.WEBSITE_URL}account/resetPassword?id=${user.id}&token=${token}`
     );
     emailHtml = emailHtml.replace("<custom-email>", email);
-    console.log("Forgot password email generated.")
   } catch (err) {
     console.error("Error reading file:", err);
-    res.status(500);
-    throw new Error("Failed to read forgot password email HTML.");
   }
 
-  console.log("Sending forgot password email...");
+  if (!emailHtml) {
+    res.status(500);
+    throw new Error("Failed to read email HTML");
+  }
+
   await transporter
     .sendMail({
       from: {
@@ -254,84 +249,37 @@ const sendForgotPasswordEmail = asyncHandler(async (req, res) => {
       ],
     })
     .then(() => {
-      console.log("Forgot password email sent.");
-      res.status(200).json({ message: "Forgot password email sent" });
+      console.log("Forgot password email Sent");
+      res.status(200).json({ message: "Forgot email sent" });
     })
     .catch((err) => {
       console.err(err);
       res.status(500);
-      throw new Error("Forgot password email was not able to be sent");
+      throw new Error("Email was not able to be sent");
     });
 });
 
-//@desc Current user info
-//@route GET /api/users/current
-//@access private
-const currentUser = asyncHandler(async (req, res) => {
-  res.status(200).json(req.user);
-});
-
-//@desc Get QR payload
-//@route GET /api/users/getQr
-//@access private
-const getQr = asyncHandler(async (req, res) => {
-  const id = req.user.id;
-
-  let event = await Event.findOne({ _id: process.env.EVENT_ID });
-  if (!event) {
-    res.status(404)
-    throw Error("Event Document not found.")
-  }
-  
-  res.status(200).json({ id: id, eventName: await bcrypt.hash(event.eventName, 10) });
-});
-
-//@desc Verifiesd a user
-//@route PATCH /api/users/verifyUser
-//@access public
-const verifyUser = asyncHandler(async (req, res) => {
-  const { id, token } = req.body;
-
-  const user = await User.findOne({ _id: id });
-  if (!user) {
-    res.status(404)
-    throw Error("Unable to find user.")
-  }
-
-  console.log("Verifying user...");
-  if (user.token.hash == token && !expires.expired(user.token.expiry)) {
-    await User.findOneAndUpdate(
-      { _id: id },
-      {
-        isEmailVerified: true,
-        token: {
-          hash: "",
-          expires: -1,
-        },
-      }
-    );
-    console.log("User verified.")
-    res.status(200).json({ message: "Verified the user" });
-  } else {
-    res.status(400);
-    throw new Error("Token hash does not match or has expired.");
-  }
-});
-
-//@desc Resets user password
-//@route PATCH /api/users/resetPass
+//@desc Reset member password
+//@route POST /api/users/resetPass
 //@access public
 const resetPassword = asyncHandler(async (req, res) => {
   const { id, token, newPass } = req.body;
-
   const hashedPassword = await bcrypt.hash(newPass, 10);
+  console.log(id);
 
-  let user = await User.findOne({ _id: id });
+  let user;
+  try {
+    user = await User.findOne({ _id: id });
+  } catch (err) {
+    console.log(err);
+  }
+
   if (!user) {
-    res.status(404)
-    throw Error("Unable to find user.")
+    res.status(404);
+    throw new Error("Document id not found");
   }
   
+  console.log(user);
   if (user.token.hash == token && !expires.expired(user.token.expiry)) {
     await User.findOneAndUpdate(
       { _id: id },
@@ -346,16 +294,102 @@ const resetPassword = asyncHandler(async (req, res) => {
     res.status(200).json({ message: "Password reseted." });
   } else {
     res.status(400);
-    throw new Error("Token hash does not match or has expired.");
+    throw new Error("Token hash does not match or has expired");
   }
+});
+
+//@desc Login user
+//@route POST /api/users/login
+//@access public
+const loginUser = asyncHandler(async (req, res) => {
+  console.log("log in called");
+
+  const { email, password } = req.body;
+  if (!email || !password) {
+    res.status(400);
+    throw new Error("All fields are mandatory!");
+  }
+
+  let user;
+  try {
+    user = await User.findOne({ email: email });
+  } catch (err) {
+    console.log(err);
+  }
+
+  console.log("found user");
+
+  if (!user) {
+    res.status(404);
+    throw new Error("Email is not found");
+  }
+
+  if (!user.isEmailVerified) {
+    res.status(401);
+    throw new Error("The email for this account has not been verified.");
+  }
+  console.log("before logged in");
+
+  //compare password with hashedpassword
+  if (await bcrypt.compare(password, user.password)) {
+    const accessToken = await jwt.sign(
+      {
+        user: {
+          username: user.username,
+          email: user.email,
+          id: user.id,
+          userStatus: user.userStatus,
+        },
+      },
+      process.env.ACCESS_TOKEN_SECRET,
+      { expiresIn: "3d" }
+    );
+    console.log(user.userStatus);
+    console.log("logged in");
+    res.status(200).json({
+      accessToken: accessToken,
+      name: user.username,
+      role: user.userStatus,
+    });
+  } else {
+    res.status(401);
+    throw new Error("Email or password is not valid");
+  }
+});
+
+//@desc Current user info
+//@route POST /api/users/current
+//@access private
+const currentUser = asyncHandler(async (req, res) => {
+  res.json(req.user);
+});
+
+//@desc Get QR JSON
+//@route POST /api/users/getQr
+//@access private
+const getQr = asyncHandler(async (req, res) => {
+  const id = req.user.id;
+  let event;
+  try {
+    event = await Event.findOne({ _id: process.env.EVENT_ID });
+  } catch (err) {
+    console.err(err);
+  }
+  if (!event.eventName) {
+    res.status(404);
+    throw new Error("Event Document not found");
+  }
+
+  res
+    .status(200)
+    .json({ id: id, eventName: await bcrypt.hash(event.eventName, 10) });
 });
 
 module.exports = {
   registerUser,
-  sendVerificationEmail,
   loginUser,
   verifyUser,
-  sendForgotPasswordEmail,
+  forgotPassword,
   resetPassword,
   currentUser,
   getQr,

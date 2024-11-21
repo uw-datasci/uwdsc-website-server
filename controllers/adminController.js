@@ -5,13 +5,6 @@ const User = require("../models/userModel");
 const Event = require("../models/eventModel");
 const dotenv = require("dotenv").config();
 
-function getSchemaKeysExcept(model, excludeKeys = []) {
-    // Get the keys of the schema from the model
-    const keys = Object.keys(model.schema.obj);
-
-    // Filter out the keys that should be excluded
-    return keys.filter(key => !excludeKeys.includes(key));
-}
 
 //@desc Get all users
 //@route GET /api/admin/getAllUsers
@@ -21,17 +14,22 @@ const getAllUsers = asyncHandler(async (req, res) => {
     res.status(200).json(users);
 });
 
+
+//@desc Get user by email
+//@route GET /api/admin/getUserByEmail/:email
+//@access Private
+const getUserByEmail = asyncHandler(async (req, res) => {
+    const email = req.params.email; // Extracting email from URL parameters
+    const user = await User.findOne({ email: email });
+    res.status(200).json(user);
+});
+
 //@desc Get user by ID
 //@route GET /api/admin/getUserById/:id
 //@access Private
 const getUserById = asyncHandler(async (req, res) => {
     const id = req.params.id; // Extracting email from URL parameters
     const user = await User.findOne({ _id: id });
-    if (!user) {
-        res.status(404)
-        throw Error("Unable to find user.")
-    }
-    
     res.status(200).json(user);
 });
 
@@ -42,6 +40,10 @@ const getUserById = asyncHandler(async (req, res) => {
 const createUser = asyncHandler(async (req, res) => {
     const { username, email, password, watIAM, faculty, term, heardFromWhere, memberIdeas, userStatus } = req.body;
 
+    if (!username || !email || !password || !watIAM || !faculty || !term || !heardFromWhere) {
+      res.status(400);
+      throw new Error("All fields are mandatory!");
+    }
     const userAvailable = await User.findOne({ email });
     if (userAvailable) {
       res.status(400);
@@ -65,66 +67,112 @@ const createUser = asyncHandler(async (req, res) => {
             userStatus: userStatus || 'member'
         });
         console.log(`User created ${user}`);
-        res.status(201).json({ _id: user.id, email: user.email });
       } catch (err) {
         console.log(err);
         res.status(500);
-        throw new Error("Failed to create user.");
+        throw new Error("Failed to create user");
       }
+  
+    console.log(`User created ${user}`);
+    if (user) {
+      res.status(201).json({ _id: user.id, email: user.email });
+    } else {
+      res.status(400);
+      throw new Error("User data is not valid");
+    }
+    res.json({ message: "Register the user" });
   });
 
 
 //@desc Update an existing user
-//@route PATCH /api/admin/patchUserById:id
+//@route PUT /api/admin/updateUserById:id
 //@access Private
-const patchUserById = asyncHandler(async (req, res) => {
-    let user = await User.findById(req.params.id);
+const updateUserById = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.params.id);
+
     if (!user) {
-        res.status(404)
-        throw Error("Unable to find user.")
+        res.status(404);
+        throw new Error("User not found");
     }
 
-    const allowedFields = getSchemaKeysExcept(User, ["isIncomplete", "token"])
-    const updatedFields = Object.fromEntries(
-        Object.entries(req.body).filter(([key]) => allowedFields.includes(key))
-    );
+    const { username, email, password, hasPaid, paymentMethod, paymentLocation, verifier, isEmailVerified, userStatus } = req.body;
+
+    // update each field iff provided
+    const updatedFields = {
+        ...(username && { username }),
+        ...(email && { email }),
+        ...({ hasPaid }),
+        ...(paymentMethod && { paymentMethod: (paymentMethod == "EMPTY_FIELD"? "" : paymentMethod) }),
+        ...(verifier && { verifier: (verifier == "EMPTY_FIELD"? "" : verifier) }),
+        ...(paymentLocation && { paymentLocation: (paymentLocation == "EMPTY_FIELD"? "" : paymentLocation) }),
+        ...({ isEmailVerified }),
+        ...(userStatus && { userStatus }),
+    };
 
     // hash and update password
-    if (updatedFields.hasOwnProperty("password")) {
+    if (password) {
         const salt = await bcrypt.genSalt(10);
-        updatedFields.password = await bcrypt.hash(updatedFields.password, salt);
+        updatedFields.password = await bcrypt.hash(password, salt);
     }
 
+
+    console.log(updatedFields);
     // Update user
-    await User.findByIdAndUpdate(req.params.id, updatedFields, { new: true });
-    res.status(200).json({ message : "Updated user", updatedFields : updatedFields});
+    const updatedUser = await User.findByIdAndUpdate(req.params.id, updatedFields, { new: true });
+
+    if (updatedUser) {
+        res.status(200).json({
+            _id: updatedUser._id,
+            username: updatedUser.username,
+            email: updatedUser.email,
+            userStatus: updatedUser.userStatus
+        });
+    } else {
+        res.status(400);
+        throw new Error("Could not update user");
+    }
 });
 
 //@desc Delete an existing user
 //@route DELETE /api/admin/deleteUserById/:id
 //@access Private
 const deleteUserById = asyncHandler(async (req, res) => {
-    await User.deleteOne({_id: req.params.id});
-    res.status(200).json({ message: "User deleted successfully." });
+    try {
+        await User.deleteOne({_id: req.params.id});
+        res.status(200).json({ message: "User deleted successfully" });
+    } catch (error) {
+        console.error("Error removing user:", error);
+        res.status(500).json({ message: "Failed to delete user due to server error" });
+    }
 });
 
 //@desc Check in a user
-//@route PATCH /api/admin/checkInById/:id
+//@route PUT /api/admin/checkInById/:id
 //@access Private
 const checkInById = asyncHandler(async (req, res) => {
     const eventName = req.body.eventName;
     const id = req.params.id;
 
-    let user = await User.findOne({ _id: id });
+    let user;
+    try {
+        user = await User.findOne({ _id: id });
+    } catch (err) {
+        console.log(err);
+    }
     if (!user) {
         res.status(404);
-        throw new Error("Id is not found.");
+        throw new Error("Id is not found");
     }
 
-    let event = await Event.findOne({ _id: "66e7be7a0efdeac0ca2b6644" });
-    if (!event) {
+    let event;
+    try {
+        event = await Event.findOne({ _id: "66e7be7a0efdeac0ca2b6644" });
+    } catch (err) {
+        console.err(err);
+    }
+    if (!event.eventName) {
         res.status(404);
-        throw new Error("Event Document not found.");
+        throw new Error("Event Document not found");
     }
 
     if (await bcrypt.compare(event.eventName, eventName)) {
@@ -135,6 +183,8 @@ const checkInById = asyncHandler(async (req, res) => {
     } else {
         res.status(401).json({ message: "Event hash does not match"});
     }
+
+
 });
 
-module.exports = { getAllUsers, getUserById, createUser, patchUserById, deleteUserById, checkInById };
+module.exports = { getAllUsers, getUserByEmail, getUserById, createUser, updateUserById, deleteUserById, checkInById };

@@ -1,6 +1,6 @@
 const express = require("express");
 const connectDb = require("./config/dbConnection");
-const { errorHandler } = require("./middleware/errorHandler");
+const errorHandler = require("./middleware/errorHandler");
 const dotenv = require("dotenv").config();
 const cors = require("cors");
 
@@ -21,6 +21,7 @@ app.use(express.json());
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/hello", require("./routes/helloRoutes"));
+app.use("/api/resend-verification", require("./routes/verificationRoutes"));
 app.use(errorHandler);
 
 app.listen(port, () => {

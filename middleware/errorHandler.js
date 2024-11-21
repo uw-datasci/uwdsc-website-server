@@ -1,12 +1,10 @@
 const { constants } = require("../constants");
-const asyncHandler = require("express-async-handler");
-
 const errorHandler = (err, req, res, next) => {
   const statusCode = res.statusCode ? res.statusCode : 500;
   switch (statusCode) {
-    case constants.BAD_REQUEST:
+    case constants.VALIDATION_ERROR:
       res.json({
-        title: "Bad Request",
+        title: "Validation Failed",
         message: err.message,
         stackTrace: err.stack,
       });
@@ -36,35 +34,9 @@ const errorHandler = (err, req, res, next) => {
         stackTrace: err.stack,
       });
     default:
-      console.log("Successfully handled request");
+      console.log("Validation Sucessed");
       break;
   }
 };
 
-const requiresAll = (paramArr) => {
-  return asyncHandler(async (req, res, next) => {
-    const hasAllParams = paramArr.every((param) => req.body.hasOwnProperty(param));
-    
-    if (!hasAllParams) {
-      res.status(400)
-      throw new Error("Missing required parameters");
-    }
-
-    next();
-  })
-}
-
-const requiresOneOf = (paramArr) => {
-  return asyncHandler(async (req, res, next) => {
-    const hasAllParams = paramArr.some((param) => req.body.hasOwnProperty(param));
-    
-    if (!hasAllParams) {
-      res.status(400)
-      throw new Error("Missing required parameters");
-    }
-
-    next();
-  })
-}
-
-module.exports = {errorHandler, requiresAll, requiresOneOf};
+module.exports = errorHandler;

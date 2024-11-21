@@ -1,56 +1,29 @@
 const express = require("express");
 const {
   registerUser,
-  sendVerificationEmail,
   currentUser,
   loginUser,
   verifyUser,
-  sendForgotPasswordEmail,
+  forgotPassword,
   resetPassword,
   getQr,
 } = require("../controllers/userController");
-const { requiresAll } = require("../middleware/errorHandler")
 const { validateToken } = require("../middleware/validateTokenHandler");
 
 const router = express.Router();
 
-router.get("/qr", validateToken, getQr);
+router.post("/register", registerUser);
 
-router.get("/user", validateToken, currentUser);
+router.get("/login", loginUser);
 
-router.post("/user", 
-  requiresAll([
-    "username",
-    "email",
-    "password",
-    "watIAM",
-    "faculty",
-    "term",
-    "heardFromWhere",
-    "memberIdeas"
-  ]), registerUser);
+router.get("/getQr", validateToken, getQr);
 
-router.post("/login", 
-  requiresAll([
-    "email",
-    "password"
-  ]), loginUser);
+router.get("/current", validateToken, currentUser);
 
-router.post("/sendVerification",requiresAll(["email"]), sendVerificationEmail);
+router.put("/forgotPass", forgotPassword);
 
-router.post("/sendForgotPassword",requiresAll(["email"]), sendForgotPasswordEmail);
+router.put("/resetPass", resetPassword);
 
-router.patch("/resetPass",
-  requiresAll([
-    "id",
-    "token",
-    "newPass"
-  ]), resetPassword);
-
-router.patch("/verifyUser", 
-  requiresAll([
-    "id",
-    "token" 
-  ]), verifyUser);
+router.put("/verifyUser", verifyUser);
 
 module.exports = router;
