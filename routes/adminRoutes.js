@@ -1,29 +1,29 @@
 const express = require("express");
 const {
     getAllUsers,
-    getUserByEmail,
     getUserById,
     createUser,
-    updateUserById,
+    patchUserById,
     deleteUserById,
     checkInById,
 } = require("../controllers/adminController");
+const { requiresAll } = require("../middleware/errorHandler")
 const { validateAdmin } = require("../middleware/validateTokenHandler");
 
 const router = express.Router();
 
-router.get("/getAllUsers", validateAdmin, getAllUsers);
+router.use(validateAdmin);
 
-router.get("/getUserByEmail/:email", validateAdmin, getUserByEmail);
+router.get("/users", getAllUsers);
 
-router.get("/getUserById/:id", validateAdmin, getUserById);
+router.get("/users/:id", getUserById);
 
-router.post("/createUser", validateAdmin, createUser);
+router.post("/users", createUser);
 
-router.put("/updateUserById/:id", validateAdmin, updateUserById);
+router.patch("/users/:id", patchUserById);
 
-router.put("/checkInById/:id", validateAdmin, checkInById);
+router.patch("/users/checkIn/:id", requiresAll(["eventName"]), checkInById);
 
-router.delete("/deleteUserById/:id", validateAdmin, deleteUserById);
+router.delete("/users/:id", deleteUserById);
 
 module.exports = router;

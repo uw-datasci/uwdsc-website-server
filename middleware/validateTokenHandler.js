@@ -13,6 +13,7 @@ const validateToken = asyncHandler(async (req, res, next) => {
         throw new Error("User is not authorized");
       }
       req.user = decoded.user;
+      console.log("User verified")
       next();
     });
 
@@ -35,6 +36,7 @@ const validateAdmin = asyncHandler(async (req, res, next) => {
         throw new Error("User is not authorized");
       }
       req.user = decoded.user;
+      console.log("Admin verified")
       next();
     });
 
