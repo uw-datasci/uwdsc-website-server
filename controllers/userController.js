@@ -36,6 +36,11 @@ const registerUser = asyncHandler(async (req, res) => {
   } = req.body;
 
   const userAvailable = await User.findOne({ email });
+  if (userAvailable && !userAvailable.isEmailVerified) {
+    res.status(409);
+    throw new Error("User already registered, but email is not verified.");
+  }
+
   if (userAvailable) {
     res.status(400);
     throw new Error("User already registered!");
@@ -140,7 +145,6 @@ const sendVerificationEmail = asyncHandler(async (req, res) => {
   await User.findOneAndUpdate(
     { _id: user.id },
     {
-      isEmailVerified: true,
       token: {
         hash: token,
         expires: expiry,
@@ -164,7 +168,7 @@ const sendVerificationEmail = asyncHandler(async (req, res) => {
   }
 
   console.log("Sending verification email...")
-  await transporter
+  transporter
     .sendMail({
       from: {
         name: "DSC Automated Mail",
@@ -186,7 +190,7 @@ const sendVerificationEmail = asyncHandler(async (req, res) => {
       res.status(200).json({ message: "Verification email sent" });
     })
     .catch((err) => {
-      console.err(err);
+      console.error(err);
       res.status(500);
       throw new Error("Verification email was not able to be sent.");
     });
@@ -258,7 +262,7 @@ const sendForgotPasswordEmail = asyncHandler(async (req, res) => {
       res.status(200).json({ message: "Forgot password email sent" });
     })
     .catch((err) => {
-      console.err(err);
+      console.error(err);
       res.status(500);
       throw new Error("Forgot password email was not able to be sent");
     });

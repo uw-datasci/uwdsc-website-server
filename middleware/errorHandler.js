@@ -35,6 +35,12 @@ const errorHandler = (err, req, res, next) => {
         message: err.message,
         stackTrace: err.stack,
       });
+    case constants.CONFLICT:
+      res.json({
+        title: "Conflict",
+        message: err.message,
+        stackTrace: err.stack,
+      });
     default:
       console.log("Successfully handled request");
       break;
