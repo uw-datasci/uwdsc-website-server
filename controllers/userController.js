@@ -51,6 +51,8 @@ const registerUser = asyncHandler(async (req, res) => {
   const hashedPassword = await bcrypt.hash(password, 10);
   const token = uuidv4();
   const expiry = expires.after("1 hours");
+  // const passwordToken = uuidv4();
+  // const passwordExpiry = expires.after("1 hours");
   console.log("Verification token generated.")
 
   console.log("Creating user...")
@@ -67,6 +69,10 @@ const registerUser = asyncHandler(async (req, res) => {
       hash: token,
       expires: expiry,
     },
+    // passwordToken: {
+    //   hash: passwordToken,
+    //   expires: passwordExpiry,
+    // },
   });
 
   if (!user) {
@@ -209,17 +215,22 @@ const sendForgotPasswordEmail = asyncHandler(async (req, res) => {
   }
 
   console.log("Generating forgot password token...")
-  const token = uuidv4();
+  const token = uuidv4(); // delete
+  // const passwordToken = uuidv4();
   const expiry = expires.after("10 minutes");
   console.log("Token generated.")
 
   await User.findOneAndUpdate(
     { _id: user.id },
     {
-      token: {
-        hash: token,
-        expires: expiry,
-      },
+      token: { // delete
+        hash: token, // delete
+        expires: expiry, // delete
+      }, // delete
+      // passwordToken: { 
+      //   hash: passwordToken, 
+      //   expires: expiry,
+      // },
     }
   );
 
@@ -229,7 +240,8 @@ const sendForgotPasswordEmail = asyncHandler(async (req, res) => {
     emailHtml = fs.readFileSync("./emailHtml/forgotpassword.html", "utf8");
     emailHtml = emailHtml.replace(
       "<custom-link>",
-      `${process.env.WEBSITE_URL}account/resetPassword?id=${user.id}&token=${token}`
+      `${process.env.WEBSITE_URL}account/resetPassword?id=${user.id}&token=${token}` // delete
+      // `${process.env.WEBSITE_URL}account/resetPassword?id=${user.id}&passwordToken=${passwordToken}`
     );
     emailHtml = emailHtml.replace("<custom-email>", email);
     console.log("Forgot password email generated.")
@@ -326,7 +338,8 @@ const verifyUser = asyncHandler(async (req, res) => {
 //@route PATCH /api/users/resetPass
 //@access public
 const resetPassword = asyncHandler(async (req, res) => {
-  const { id, token, newPass } = req.body;
+  const { id, token, newPass } = req.body; // delete
+  // const { id, passwordToken, newPass } = req.body;
 
   const hashedPassword = await bcrypt.hash(newPass, 10);
 
@@ -336,12 +349,14 @@ const resetPassword = asyncHandler(async (req, res) => {
     throw Error("Unable to find user.")
   }
   
-  if (user.token.hash == token && !expires.expired(user.token.expiry)) {
+  if (user.token.hash == token && !expires.expired(user.token.expiry)) { // delete
+  // if (user.passwordToken.hash == passwordToken && !expires.expired(user.passwordToken.expiry)) { 
     await User.findOneAndUpdate(
       { _id: id },
       {
         password: hashedPassword,
-        token: {
+        token: { // delete
+        // passwordToken: {
           hash: "",
           expires: -1,
         },
