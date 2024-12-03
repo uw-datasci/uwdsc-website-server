@@ -43,9 +43,11 @@ router.post("/sendForgotPassword",requiresAll(["email"]), sendForgotPasswordEmai
 router.patch("/resetPass",
   requiresAll([
     "id",
-    "token",
+    "token", // delete
+    // "passwordToken",
     "newPass"
   ]), resetPassword);
+
 
 router.patch("/verifyUser", 
   requiresAll([
