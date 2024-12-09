@@ -18,10 +18,12 @@ const userSchema = mongoose.Schema(
     userStatus: {
         type: String,
         enum: ['member', 'admin'],
-        default: 'member',
+        required: [true, "Please add the user's status"],
+        default: 'member'
     },
     hasPaid: {
         type: Boolean,
+        required: [true, "Please add whether the user has paid or not"],
         default: false
     },
     watIAM: {
@@ -46,27 +48,47 @@ const userSchema = mongoose.Schema(
     paymentMethod: {
         type: String,
         enum: ["Cash", "Online", "MathSoc"],
+        validate: {
+            validator: (value) => {
+                if (this.hasPaid && !value) {
+                    return false;
+                }
+                return true;
+            },
+            message: "You need a payment method if a user has paid",
+        },
     },
     paymentLocation: {
         type: String,
+        validate: {
+            validator: (value) => {
+                if (this.hasPaid && !value) {
+                    return false;
+                }
+                return true;
+            },
+            message: "You need a payment location if a user has paid",
+        },
     },
     verifier: {
         type: String,
+        validate: {
+            validator: (value) => {
+                if (this.hasPaid && !value) {
+                    return false;
+                }
+                return true;
+            },
+            message: "You need a payment verifier if a user has paid",
+        },
     },
     isEmailVerified: {
         type: Boolean,
+        required: [true, "Please add if the user's email is verified"],
         default: false,
     },
     memberIdeas: {
         type: String
-    },
-    isCheckedIn: {
-        type: Boolean,
-        default: false,
-    },
-    isIncomplete: {
-        type: Boolean,
-        default: false,
     },
     token: {
         hash: {
@@ -84,4 +106,4 @@ const userSchema = mongoose.Schema(
 }
 );
 
-module.exports = mongoose.model("members", userSchema);
+module.exports = mongoose.model("users", userSchema);
