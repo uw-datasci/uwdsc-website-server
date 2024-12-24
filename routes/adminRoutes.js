@@ -1,18 +1,19 @@
 const express = require("express");
 const {
-    getAllUsers,
-    getUserById,
-    createUser,
-    patchUserById,
-    deleteUserById,
-    checkInById,
+  getAllUsers,
+  getUserById,
+  createUser,
+  patchUserById,
+  deleteUserById,
+  checkInById,
 } = require("../controllers/adminController");
-const { requiresAll } = require("../middleware/errorHandler")
+const { requiresAll } = require("../middleware/errorHandler");
 const { validateAdmin } = require("../middleware/validateTokenHandler");
 
 const router = express.Router();
 
 router.use(validateAdmin);
+router.use("/events", require("./eventRoutes"));
 
 router.get("/users", getAllUsers);
 

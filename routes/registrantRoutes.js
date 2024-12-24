@@ -1,5 +1,4 @@
 const express = require("express");
-const { validateAdmin } = require("../middleware/validateTokenHandler");
 const {
   getAllRegistrants,
   getRegistrantById,
@@ -9,8 +8,6 @@ const {
 } = require("../controllers/registrantController");
 
 const router = express.Router({ mergeParams: true });
-
-router.use(validateAdmin);
 
 router.get("/", getAllRegistrants);
 
