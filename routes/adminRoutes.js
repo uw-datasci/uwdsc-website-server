@@ -7,6 +7,13 @@ const {
     deleteUserById,
     checkInById,
 } = require("../controllers/adminController");
+
+const {
+    getAllEvents,
+    getEventById,
+    createEvent
+} = require("../controllers/eventController");
+
 const { requiresAll } = require("../middleware/errorHandler")
 const { validateAdmin } = require("../middleware/validateTokenHandler");
 
@@ -25,5 +32,9 @@ router.patch("/users/:id", patchUserById);
 router.patch("/users/checkIn/:id", requiresAll(["eventName"]), checkInById);
 
 router.delete("/users/:id", deleteUserById);
+
+router.get("/events/:id", getEventById);
+
+router.post("/events", createEvent);
 
 module.exports = router;
