@@ -49,28 +49,32 @@ const errorHandler = (err, req, res, next) => {
 
 const requiresAll = (paramArr) => {
   return asyncHandler(async (req, res, next) => {
-    const hasAllParams = paramArr.every((param) => req.body.hasOwnProperty(param));
-    
+    const hasAllParams = paramArr.every((param) =>
+      req.body.hasOwnProperty(param)
+    );
+
     if (!hasAllParams) {
-      res.status(400)
+      res.status(400);
       throw new Error("Missing required parameters");
     }
 
     next();
-  })
-}
+  });
+};
 
 const requiresOneOf = (paramArr) => {
   return asyncHandler(async (req, res, next) => {
-    const hasAllParams = paramArr.some((param) => req.body.hasOwnProperty(param));
-    
+    const hasAllParams = paramArr.some((param) =>
+      req.body.hasOwnProperty(param)
+    );
+
     if (!hasAllParams) {
-      res.status(400)
+      res.status(400);
       throw new Error("Missing required parameters");
     }
 
     next();
-  })
-}
+  });
+};
 
-module.exports = {errorHandler, requiresAll, requiresOneOf};
+module.exports = { errorHandler, requiresAll, requiresOneOf };

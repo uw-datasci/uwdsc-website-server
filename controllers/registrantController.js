@@ -7,6 +7,7 @@ const User = require("../models/userModel");
 //@access Private
 const getAllRegistrants = asyncHandler(async (req, res) => {
   const eventId = req.params.event_id;
+
   const event = await Event.findOne({ _id: eventId }).populate(
     "registrants.userId"
   );
@@ -14,6 +15,7 @@ const getAllRegistrants = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("Event not found.");
   }
+
   const registrants = event.registrants;
   return res.status(200).json({ registrants });
 });
@@ -24,6 +26,7 @@ const getAllRegistrants = asyncHandler(async (req, res) => {
 const getRegistrantById = asyncHandler(async (req, res) => {
   const eventId = req.params.event_id;
   const userId = req.params.user_id;
+
   const event = await Event.findOne({ _id: eventId }).populate(
     "registrants.userId"
   );
@@ -32,7 +35,7 @@ const getRegistrantById = asyncHandler(async (req, res) => {
     throw new Error("Event not found.");
   }
   const registrant = event.registrants.find(
-    (r) => r.userId.toString() === userId
+    (r) => r.userId._id.toString() === userId
   );
   if (!registrant) {
     res.status(404);
@@ -51,38 +54,51 @@ const attachRegistrantById = asyncHandler(async (req, res) => {
   const eventId = req.params.event_id;
   const userId = req.body.userId;
 
-  const event = await Event.findOne({ _id: eventId });
+  const [event, user] = await Promise.all([
+    Event.findOne({ _id: eventId }),
+    User.findOne({ _id: userId }),
+  ]);
+
   if (!event) {
     res.status(404);
     throw new Error("Event not found.");
   }
 
-  const registrant = event.registrants.find(
-    (r) => r.userId.toString() === userId
-  );
-  if (registrant) {
-    res.status(400);
-    throw new Error("Registrant already exists.");
-  }
-
-  const user = await User.findOne({ _id: userId });
   if (!user) {
     res.status(404);
     throw new Error("User not found.");
   }
 
+  const registrant = event.registrants.find(
+    (r) => r.userId.toString() === userId
+  );
+
+  if (registrant) {
+    res.status(400);
+    throw new Error("Registrant already exists.");
+  }
+
   const newRegistrant = { userId: userId };
   const additionalFieldsSchema = event.additionalFieldsSchema;
   additionalFieldsSchema.forEach((value, key) => {
-    newRegistrant[key] = req.body[key] ? req.body[key].toString() : "";
+    if (req.body[key]) {
+      newRegistrant[key] = req.body[key].toString();
+    } else {
+      throw new Error(`Missing required field ${key}.`);
+    }
   });
-  event.registrants.push(newRegistrant);
-  await event.save();
 
-  await event.populate(["registrants.userId"]);
+  await Event.updateOne(
+    { _id: eventId },
+    { $push: { registrants: newRegistrant } }
+  );
 
-  const addedRegistrant = event.registrants.find(
-    (r) => r.userId.toString === userId
+  const updatedEvent = await Event.findOne({ _id: eventId }).populate(
+    "registrants.userId"
+  );
+
+  const addedRegistrant = updatedEvent.registrants.find(
+    (r) => r.userId._id.toString() === userId
   );
 
   return res.status(200).json({ registrant: addedRegistrant });
@@ -100,7 +116,7 @@ const patchRegistrantById = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("Event not found.");
   }
-
+  const temp = event.registrants[0].userId.toString();
   const registrant = event.registrants.find(
     (r) => r.userId.toString() === userId
   );
@@ -108,17 +124,19 @@ const patchRegistrantById = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("Registrant is not attached to this event.");
   }
+
   const additionalFieldsSchema = event.additionalFieldsSchema;
   additionalFieldsSchema.forEach((value, key) => {
-    if (additionalFields[key]) {
+    if (additionalFields && additionalFields[key]) {
       registrant[key] = additionalFields[key].toString();
     }
   });
+
   await event.save();
   await event.populate(["registrants.userId"]);
 
   const populatedRegistrant = event.registrants.find(
-    (r) => r.userId.toString() === userId
+    (r) => r.userId._id.toString() === userId
   );
 
   return res.status(200).json({ registrant: populatedRegistrant });
@@ -139,7 +157,6 @@ const deleteRegistrantById = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("Event not found.");
   }
-  await updatedEvent.save();
   return res.status(200).json({ message: "Deleted registrant" });
 });
 

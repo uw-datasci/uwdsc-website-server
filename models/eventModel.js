@@ -1,9 +1,9 @@
 const mongoose = require("mongoose");
 const { v4: uuidv4 } = require("uuid");
-const User = mongoose.model('users');
+const User = mongoose.model("users");
 const {
-  mapKeysValidator, 
-  mapKeysErrorMessage
+  mapKeysValidator,
+  mapKeysErrorMessage,
 } = require("../models/validators");
 
 const createUserRegistrantSchema = (additionalFieldsSchema) => {
@@ -28,7 +28,7 @@ const createUserRegistrantSchema = (additionalFieldsSchema) => {
         },
       },
       { _id: false }
-    )
+    );
   } else {
     return new mongoose.Schema(
       {
@@ -42,7 +42,7 @@ const createUserRegistrantSchema = (additionalFieldsSchema) => {
         },
       },
       { _id: false }
-    )
+    );
   }
 };
 
@@ -51,7 +51,7 @@ const eventSchema = mongoose.Schema(
     // Basic information for event
     name: {
       type: String,
-      required: true
+      required: true,
     },
     isRegistrationRequired: {
       type: Boolean,
@@ -59,26 +59,26 @@ const eventSchema = mongoose.Schema(
       immutable: true,
     },
     description: {
-      type: String
+      type: String,
     },
     location: {
-      type: String
+      type: String,
     },
     startTime: {
       type: Date,
       required: true,
       validate: {
-        validator: (startTime) =>  startTime > new Date(), // Ensure startTime is in the future
+        validator: (startTime) => startTime > new Date(), // Ensure startTime is in the future
         message: "startTime must be in the future",
-      }
+      },
     },
     endTime: {
       type: Date,
       required: true,
       validate: {
         validator: (endTime) => endTime > this.startTime, // Ensure endTime is after startTime
-        message: "endTime must be after startTime"
-      }
+        message: "endTime must be after startTime",
+      },
     },
 
     // Sensitve information for event
@@ -87,13 +87,15 @@ const eventSchema = mongoose.Schema(
       type: String,
       required: true,
       immutable: true,
-      default: () => {return uuidv4()}
+      default: () => {
+        return uuidv4();
+      },
     },
 
     // Requirements for users to be checked-in
     requirements: {
       type: createUserRegistrantSchema(this.additionalFieldsSchema),
-      required: true
+      required: true,
     },
 
     // What to display to admins during check-in
@@ -106,43 +108,40 @@ const eventSchema = mongoose.Schema(
           type: createUserRegistrantSchema(this.additionalFieldsSchema),
         },
       },
-      required: [true, "Please provide what to display before/after check-in"]
+      required: [true, "Please provide what to display before/after check-in"],
     },
 
     // Schema of additional fields, for now mainly for admin panel
     additionalFieldsSchema: {
       type: Map,
       of: mongoose.Schema.Types.Mixed,
-      required: true,
-      default: {}
+      default: {},
     },
 
     // All users that have registered for this event
     registrants: {
-      type : [
+      type: [
         {
           userId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'users',
-            required: true 
+            ref: "users",
+            required: true,
           },
           checkedIn: {
             type: Boolean,
-            required: true,
-            default: false
+            default: false,
           },
-          additionalFields:{
+          additionalFields: {
             type: Map,
-            of: mongoose.Schema.Types.Mixed
-          }
-        }
+            of: mongoose.Schema.Types.Mixed,
+          },
+        },
       ],
-      required: true,
-      default: []
-    }
+      default: [],
+    },
   },
   {
-    timestamps: true
+    timestamps: true,
   }
 );
 
