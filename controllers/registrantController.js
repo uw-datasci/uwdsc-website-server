@@ -116,7 +116,7 @@ const patchRegistrantById = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("Event not found.");
   }
-  const temp = event.registrants[0].userId.toString();
+
   const registrant = event.registrants.find(
     (r) => r.userId.toString() === userId
   );
