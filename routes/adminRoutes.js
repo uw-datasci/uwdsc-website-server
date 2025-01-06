@@ -11,7 +11,9 @@ const {
 const {
     getAllEvents,
     getEventById,
-    createEvent
+    createEvent,
+    patchEventById,
+    deleteEventById
 } = require("../controllers/eventController");
 
 const { requiresAll } = require("../middleware/errorHandler")
@@ -33,8 +35,14 @@ router.patch("/users/checkIn/:id", requiresAll(["eventName"]), checkInById);
 
 router.delete("/users/:id", deleteUserById);
 
+router.get("/events", getAllEvents);
+
 router.get("/events/:id", getEventById);
 
 router.post("/events", createEvent);
+
+router.patch("/events/:id", patchEventById);
+
+router.delete("/events/:id", deleteEventById);
 
 module.exports = router;

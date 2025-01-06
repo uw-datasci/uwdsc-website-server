@@ -254,12 +254,31 @@ eventSchema.query.byDateRange = function (start, end) {
 
 // Return all event happening on dateTime
 eventSchema.query.eventsHappeningOn = function (dateTime) {
-  return this.where("startDate").lte(dateTime).where("endDate").gte(dateTime);
+  return this.where("startTime").lte(dateTime).where("endTime").gte(dateTime);
 };
+
+// Return all events happening before dateTime
+eventSchema.query.eventsHappeningBefore = function (dateTime) {
+  return this.where("startTime").lte(dateTime);
+}
+
+// Return all events happening after dateTime
+eventSchema.query.eventsHappeningAfter = function (dateTime) {
+  console.log(dateTime);
+  return this.where("startTime").gte(dateTime);
+};
+
+// Return all events
+eventSchema.query.allEvents = function () {
+  return this;
+}
 
 eventSchema.virtual("registrantCount").get(function () {
   return this.registrants.length;
 });
+
+eventSchema.set("toJSON", { virtuals: true });
+eventSchema.set("toObject", { virtuals: true });
 
 eventSchema.index({ secretName: 1 }, { unique: true });
 eventSchema.index({ startTime: 1 });
