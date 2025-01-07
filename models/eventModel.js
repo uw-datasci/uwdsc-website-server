@@ -7,6 +7,7 @@ const {
 } = require("../models/validators");
 
 const createUserRegistrantSchema = (additionalFieldsSchema) => {
+  console.log(additionalFieldsSchema);
   if (additionalFieldsSchema) {
     return new mongoose.Schema(
       {
@@ -30,6 +31,7 @@ const createUserRegistrantSchema = (additionalFieldsSchema) => {
       { _id: false }
     );
   } else {
+    console.log("ENTERED");
     return new mongoose.Schema(
       {
         user: {
@@ -68,17 +70,13 @@ const eventSchema = mongoose.Schema(
       type: Date,
       required: true,
       validate: {
-        validator: (startTime) => startTime > new Date(), // Ensure startTime is in the future
+        validator: (startTime) =>  { console.log("start:", startTime); return startTime > new Date();}, // Ensure startTime is in the future
         message: "startTime must be in the future",
       },
     },
     endTime: {
       type: Date,
       required: true,
-      validate: {
-        validator: (endTime) => endTime > this.startTime, // Ensure endTime is after startTime
-        message: "endTime must be after startTime",
-      },
     },
 
     // Sensitve information for event
@@ -94,19 +92,53 @@ const eventSchema = mongoose.Schema(
 
     // Requirements for users to be checked-in
     requirements: {
-      type: createUserRegistrantSchema(this.additionalFieldsSchema),
-      required: true,
+      type: Map,
+      of: mongoose.Schema.Types.Map,
+      user: {
+        type: Map,
+        of: mongoose.Schema.Types.Mixed,
+        required: true
+      },
+      registrant: {
+        type: Map,
+        of: mongoose.Schema.Types.Mixed,
+      },
+      required: true
     },
 
     // What to display to admins during check-in
     toDisplay: {
-      type: {
-        before: {
-          type: createUserRegistrantSchema(this.additionalFieldsSchema),
+      type: Map,
+      of: mongoose.Schema.Types.Map,
+      before: {
+        type: Map,
+        of: mongoose.Schema.Types.Map,
+        user: {
+          type: Map,
+          of: mongoose.Schema.Types.Mixed,
+          required: true
         },
-        after: {
-          type: createUserRegistrantSchema(this.additionalFieldsSchema),
+        registrant: {
+          type: Map,
+          of: mongoose.Schema.Types.Mixed,
+          default: {}
         },
+        required: true
+      },
+      after: {
+        type: Map,
+        of: mongoose.Schema.Types.Map,
+        user: {
+          type: Map,
+          of: mongoose.Schema.Types.Mixed,
+          required: true
+        },
+        registrant: {
+          type: Map,
+          of: mongoose.Schema.Types.Mixed,
+          default: {}
+        },
+        required: true
       },
       required: [true, "Please provide what to display before/after check-in"],
     },
@@ -133,17 +165,76 @@ const eventSchema = mongoose.Schema(
           },
           additionalFields: {
             type: Map,
-            of: mongoose.Schema.Types.Mixed,
-          },
-        },
+            of: mongoose.Schema.Types.Mixed
+          }
+        }
       ],
-      default: [],
-    },
+      required: true,
+      default: []
+    }
   },
   {
-    timestamps: true,
+    timestamps: true
   }
 );
+
+/**
+ * Validation function to ensure the map follows the schema and if not, throws and error
+ * @param {mongoose.Schema} schema 
+ * @param {mongoose.Map} map 
+ * @param {function} next
+ */
+const mapValidator = (schema, map, next) => {
+  console.log(map.keys());
+  const valid = mapKeysValidator(schema)(map);
+
+  if (!valid) {
+    const errorMessage = mapKeysErrorMessage(schema)({ value: map});
+    throw next(new Error(errorMessage));
+  }
+}
+
+eventSchema.pre("validate", function (next) {
+  if (this.startTime && this.endTime && this.startTime >= this.endTime) {
+    return next(new Error('Start time must be before end time.'));
+  }
+  if (this.additionalFieldsSchema.keys().length > 0) {
+    const schemaDefinition = {}
+    this.additionalFieldsSchema.forEach((type, key) => {
+      schemaDefinition[key] = {
+        type: type
+      };
+    });
+
+    const schema = new mongoose.Schema(schemaDefinition);
+    const displayBeforeRegistrant = this.toDisplay.get("before").get("registrant");
+    if (displayBeforeRegistrant && Object.entries(displayBeforeRegistrant).length !== 0) {
+      mapValidator(schema, new Map(Object.entries(displayBeforeRegistrant)), next);
+    }
+
+    const displayAfterRegistrant = this.toDisplay.get("after").get("registrant");
+    if (displayAfterRegistrant && Object.entries(displayAfterRegistrant).length !== 0) {
+      mapValidator(schema, new Map(Object.entries(displayAfterRegistrant)), next);
+    }
+
+    mapValidator(schema, this.requirements.get("registrant"), next);
+  }
+
+  const displayBeforeUser = this.toDisplay.get("before").get("user");
+  if (displayBeforeUser && Object.entries(displayBeforeUser).length !== 0) {
+    console.log(displayBeforeUser);
+    mapValidator(User.schema, new Map(Object.entries(displayBeforeUser)), next);
+  }
+
+  const displayAfterUser = this.toDisplay.get("after").get("user");
+  if (displayAfterUser && Object.entries(displayAfterUser).length !== 0) {
+    mapValidator(User.schema, new Map(Object.entries(displayAfterUser)), next);
+  }
+
+  mapValidator(User.schema, this.requirements.get("user"), next);
+
+  next();
+});
 
 eventSchema.pre("save", async function (next) {
   if (!this.isRegistrationRequired && this.registrants.length == 0) {
@@ -163,12 +254,31 @@ eventSchema.query.byDateRange = function (start, end) {
 
 // Return all event happening on dateTime
 eventSchema.query.eventsHappeningOn = function (dateTime) {
-  return this.where("startDate").lte(dateTime).where("endDate").gte(dateTime);
+  return this.where("startTime").lte(dateTime).where("endTime").gte(dateTime);
 };
+
+// Return all events happening before dateTime
+eventSchema.query.eventsHappeningBefore = function (dateTime) {
+  return this.where("startTime").lte(dateTime);
+}
+
+// Return all events happening after dateTime
+eventSchema.query.eventsHappeningAfter = function (dateTime) {
+  console.log(dateTime);
+  return this.where("startTime").gte(dateTime);
+};
+
+// Return all events
+eventSchema.query.allEvents = function () {
+  return this;
+}
 
 eventSchema.virtual("registrantCount").get(function () {
   return this.registrants.length;
 });
+
+eventSchema.set("toJSON", { virtuals: true });
+eventSchema.set("toObject", { virtuals: true });
 
 eventSchema.index({ secretName: 1 }, { unique: true });
 eventSchema.index({ startTime: 1 });
