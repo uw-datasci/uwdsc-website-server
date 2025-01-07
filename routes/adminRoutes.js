@@ -22,7 +22,6 @@ const { validateAdmin } = require("../middleware/validateTokenHandler");
 const router = express.Router();
 
 router.use(validateAdmin);
-router.use("/events", require("./eventRoutes"));
 
 router.get("/users", getAllUsers);
 
