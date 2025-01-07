@@ -111,14 +111,16 @@ const patchRegistrantById = asyncHandler(async (req, res) => {
   const eventId = req.params.event_id;
   const { userId, ...additionalFields } = req.body;
 
-  const event = await Event.findOne({ _id: eventId });
+  const event = await Event.findOne({ _id: eventId }).populate(
+    "registrants.userId"
+  );
   if (!event) {
     res.status(404);
     throw new Error("Event not found.");
   }
 
   const registrant = event.registrants.find(
-    (r) => r.userId.toString() === userId
+    (r) => r.userId._id.toString() === userId
   );
   if (!registrant) {
     res.status(404);
@@ -133,13 +135,8 @@ const patchRegistrantById = asyncHandler(async (req, res) => {
   });
 
   await event.save();
-  await event.populate(["registrants.userId"]);
 
-  const populatedRegistrant = event.registrants.find(
-    (r) => r.userId._id.toString() === userId
-  );
-
-  return res.status(200).json({ registrant: populatedRegistrant });
+  return res.status(200).json({ registrant });
 });
 
 //@desc Delete registrant by ID
