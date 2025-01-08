@@ -252,6 +252,7 @@ eventSchema.pre("save", async function (next) {
 
 // Return all events that would happen from start to end
 eventSchema.query.byDateRange = function (start, end) {
+  console.log(start)
   return this.where("startTime").gte(start).lte(end);
 };
 

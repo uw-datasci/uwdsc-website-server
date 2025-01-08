@@ -8,21 +8,20 @@ const { v4: uuidv4 } = require("uuid");
 //@access private
 const getAllEvents = asyncHandler(async (req, res) => {
   const { fromDate, upToDate } = req.query;
+  const fromDateObj = fromDate ? new Date(fromDate) : null;
+  const upToDateObj = upToDate ? new Date(upToDate) : null;
 
   let events = [];
-  console.log(fromDate);
-  console.log(upToDate);
-  console.log(fromDate === upToDate);
   try {
-    if (fromDate && upToDate && fromDate !== upToDate) {
-      events = await Event.find().byDateRange(fromDate, upToDate);
-    } else if (fromDate && upToDate) {
-      events = await Event.find().eventsHappeningOn(fromDate);
+    if (fromDateObj && upToDateObj && fromDateObj !== upToDateObj) {
+      events = await Event.find().byDateRange(fromDateObj, upToDateObj);
+    } else if (fromDateObj && upToDateObj) {
+      events = await Event.find().eventsHappeningOn(fromDateObj);
       console.log(events);
-    } else if (fromDate) {
-      events = await Event.find().eventsHappeningAfter(fromDate);
-    } else if (upToDate) {
-      events = await Event.find().eventsHappeningBefore(upToDate);
+    } else if (fromDateObj) {
+      events = await Event.find().eventsHappeningAfter(fromDateObj);
+    } else if (upToDateObj) {
+      events = await Event.find().eventsHappeningBefore(upToDateObj);
     } else {
       events = await Event.find().allEvents();
     }
