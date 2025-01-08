@@ -1,8 +1,7 @@
 const asyncHandler = require("express-async-handler");
 
 const Event = require("../models/eventModel");
-const { ReturnDocument } = require("mongodb");
-const { model } = require("mongoose");
+const { v4: uuidv4 } = require("uuid");
 
 //@desc Get all events 
 //@route GET /api/admin/events
@@ -69,11 +68,9 @@ const createEvent = asyncHandler(async (req, res) => {
     location,
     startTime,
     endTime,
-    secretName,
     requirements,
     toDisplay,
-    additionalFieldsSchema,
-    registrants
+    additionalFieldsSchema
   } = req.body;
 
   try {
@@ -88,11 +85,9 @@ const createEvent = asyncHandler(async (req, res) => {
       location,
       startTime,
       endTime,
-      secretName,
       requirements,
       toDisplay,
-      additionalFieldsSchema,
-      registrants
+      additionalFieldsSchema
     });
     console.log(`Event created ${event}`);
     res.status(201).json({ _id: event.id });

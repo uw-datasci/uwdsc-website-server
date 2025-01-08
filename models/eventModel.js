@@ -5,6 +5,7 @@ const {
   mapKeysValidator, 
   mapKeysErrorMessage
 } = require("../models/validators");
+const { TYPE_CONSTANTS } = require("../constants");
 
 const createUserRegistrantSchema = (additionalFieldsSchema) => {
   console.log(additionalFieldsSchema);
@@ -146,7 +147,10 @@ const eventSchema = mongoose.Schema(
       type: Map,
       of: mongoose.Schema.Types.Mixed,
       required: true,
-      default: {}
+      default: {
+        userId: TYPE_CONSTANTS.STRING,
+        isCheckedIn: TYPE_CONSTANTS.BOOL
+      }
     },
 
     // All users that have registered for this event
@@ -181,24 +185,37 @@ const eventSchema = mongoose.Schema(
 /**
  * Validation function to ensure the map follows the schema and if not, throws and error
  * @param {mongoose.Schema} schema 
- * @param {mongoose.Map} map 
+ * @param {mongoose.Map} map | null 
  * @param {function} next
  */
 const mapValidator = (schema, map, next) => {
-  console.log(map.keys());
-  const valid = mapKeysValidator(schema)(map);
-
-  if (!valid) {
+  if (map && !mapKeysValidator(schema)(map)) {
     const errorMessage = mapKeysErrorMessage(schema)({ value: map});
     throw next(new Error(errorMessage));
   }
 }
 
+const convertInnerObjectsToMaps = (outerMap) => {
+  return new Map(
+    Array.from(outerMap, ([key, value]) => [
+      key,
+      value && typeof value === "object" ? new Map(Object.entries(value)) : value,
+    ])
+  );
+}
+
 eventSchema.pre("validate", function (next) {
+  // To fix
+  this.toDisplay = new Map([
+    ["before", convertInnerObjectsToMaps(this.toDisplay.get("before"))],
+    ["after", convertInnerObjectsToMaps(this.toDisplay.get("after"))]
+  ]) 
+
   if (this.startTime && this.endTime && this.startTime >= this.endTime) {
     return next(new Error('Start time must be before end time.'));
   }
-  if (this.additionalFieldsSchema.keys().length > 0) {
+
+  if (this.additionalFieldsSchema.size > 0) {
     const schemaDefinition = {}
     this.additionalFieldsSchema.forEach((type, key) => {
       schemaDefinition[key] = {
@@ -207,38 +224,24 @@ eventSchema.pre("validate", function (next) {
     });
 
     const schema = new mongoose.Schema(schemaDefinition);
-    const displayBeforeRegistrant = this.toDisplay.get("before").get("registrant");
-    if (displayBeforeRegistrant && Object.entries(displayBeforeRegistrant).length !== 0) {
-      mapValidator(schema, new Map(Object.entries(displayBeforeRegistrant)), next);
-    }
 
-    const displayAfterRegistrant = this.toDisplay.get("after").get("registrant");
-    if (displayAfterRegistrant && Object.entries(displayAfterRegistrant).length !== 0) {
-      mapValidator(schema, new Map(Object.entries(displayAfterRegistrant)), next);
-    }
-
+    mapValidator(schema, this.toDisplay.get("before")?.get("registrant"), next);
+    mapValidator(schema, this.toDisplay.get("after")?.get("registrant"), next);
     mapValidator(schema, this.requirements.get("registrant"), next);
+
+    console.log("passed")
   }
 
-  const displayBeforeUser = this.toDisplay.get("before").get("user");
-  if (displayBeforeUser && Object.entries(displayBeforeUser).length !== 0) {
-    console.log(displayBeforeUser);
-    mapValidator(User.schema, new Map(Object.entries(displayBeforeUser)), next);
-  }
-
-  const displayAfterUser = this.toDisplay.get("after").get("user");
-  if (displayAfterUser && Object.entries(displayAfterUser).length !== 0) {
-    mapValidator(User.schema, new Map(Object.entries(displayAfterUser)), next);
-  }
-
+  mapValidator(User.schema, this.toDisplay.get("before")?.get("user"), next);
+  mapValidator(User.schema, this.toDisplay.get("after")?.get("user"), next);
   mapValidator(User.schema, this.requirements.get("user"), next);
 
   next();
 });
 
 eventSchema.pre("save", async function (next) {
-  if (!this.isRegistrationRequired && this.registrants.length == 0) {
-    const allUsers = await User.find(); // Fetch all users
+  if (!this.isRegistrationRequired) {
+    const allUsers = await User.find(); 
     this.registrants = allUsers.map((user) => ({
       userId: user._id,
       checkedIn: false,

@@ -1,41 +1,41 @@
-const { constants } = require("../constants");
+const { HTTP_CONSTANTS } = require("../constants");
 const asyncHandler = require("express-async-handler");
 
 const errorHandler = (err, req, res, next) => {
   const statusCode = res.statusCode ? res.statusCode : 500;
   switch (statusCode) {
-    case constants.BAD_REQUEST:
+    case HTTP_CONSTANTS.BAD_REQUEST:
       res.json({
         title: "Bad Request",
         message: err.message,
         stackTrace: err.stack,
       });
       break;
-    case constants.NOT_FOUND:
+    case HTTP_CONSTANTS.NOT_FOUND:
       res.json({
         title: "Not Found",
         message: err.message,
         stackTrace: err.stack,
       });
-    case constants.UNAUTHORIZED:
+    case HTTP_CONSTANTS.UNAUTHORIZED:
       res.json({
         title: "Unauthorized",
         message: err.message,
         stackTrace: err.stack,
       });
-    case constants.FORBIDDEN:
+    case HTTP_CONSTANTS.FORBIDDEN:
       res.json({
         title: "Forbidden",
         message: err.message,
         stackTrace: err.stack,
       });
-    case constants.SERVER_ERROR:
+    case HTTP_CONSTANTS.SERVER_ERROR:
       res.json({
         title: "Server Error",
         message: err.message,
         stackTrace: err.stack,
       });
-    case constants.CONFLICT:
+    case HTTP_CONSTANTS.CONFLICT:
       res.json({
         title: "Conflict",
         message: err.message,
