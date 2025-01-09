@@ -276,12 +276,13 @@ const currentUser = asyncHandler(async (req, res) => {
 });
 
 //@desc Get QR payload
-//@route GET /api/users/getQr
+//@route GET /api/users/getQr/:event_id
 //@access private
 const getQr = asyncHandler(async (req, res) => {
   const id = req.user.id;
+  const event_id = req.params.event_id
 
-  let event = await Event.findOne({ _id: process.env.EVENT_ID });
+  let event = await Event.findOne({ _id: event_id });
   if (!event) {
     res.status(404)
     throw Error("Event Document not found.")

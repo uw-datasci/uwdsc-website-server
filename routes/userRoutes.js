@@ -14,7 +14,7 @@ const { validateToken } = require("../middleware/validateTokenHandler");
 
 const router = express.Router();
 
-router.get("/qr", validateToken, getQr);
+router.get("/qr/:event_id", validateToken, getQr);
 
 router.get("/user", validateToken, currentUser);
 

@@ -22,7 +22,7 @@ router.post("/users", createUser);
 
 router.patch("/users/:id", patchUserById);
 
-router.patch("/users/checkIn/:id", requiresAll(["eventName"]), checkInById);
+router.patch("/users/checkIn/:event_id/:user_id", requiresAll(["secretName"]), checkInById);
 
 router.delete("/users/:id", deleteUserById);
 

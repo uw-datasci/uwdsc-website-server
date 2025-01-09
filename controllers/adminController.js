@@ -109,27 +109,28 @@ const deleteUserById = asyncHandler(async (req, res) => {
 });
 
 //@desc Check in a user
-//@route PATCH /api/admin/checkInById/:id
+//@route PATCH /api/admin/checkInById/:event_id/:user_id
 //@access Private
 const checkInById = asyncHandler(async (req, res) => {
-    const eventName = req.body.eventName;
-    const id = req.params.id;
+    const secretName = req.body.secretName;
+    const event_id = req.params.event_id
+    const user_id = req.params.user_id;
 
-    let user = await User.findOne({ _id: id });
+    let user = await User.findOne({ _id: user_id });
     if (!user) {
         res.status(404);
         throw new Error("Id is not found.");
     }
 
-    let event = await Event.findOne({ _id: "66e7be7a0efdeac0ca2b6644" });
+    let event = await Event.findOne({ _id: event_id });
     if (!event) {
         res.status(404);
         throw new Error("Event Document not found.");
     }
 
-    if (await bcrypt.compare(event.eventName, eventName)) {
+    if (await bcrypt.compare(event.eventName, secretName)) {
         await User.findOneAndUpdate(
-            { _id: id }, 
+            { _id: user_id }, 
             { isCheckedIn: true });
         res.status(200).json({ message: "User checked in!"});
     } else {
