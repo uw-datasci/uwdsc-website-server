@@ -1,5 +1,6 @@
 const express = require("express");
 const {
+    getEvents,
     getAllUsers,
     getUserById,
     createUser,
@@ -13,6 +14,8 @@ const { validateAdmin } = require("../middleware/validateTokenHandler");
 const router = express.Router();
 
 router.use(validateAdmin);
+
+router.get("/events", getEvents);
 
 router.get("/users", getAllUsers);
 

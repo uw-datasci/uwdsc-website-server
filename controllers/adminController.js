@@ -13,6 +13,32 @@ function getSchemaKeysExcept(model, excludeKeys = []) {
     return keys.filter(key => !excludeKeys.includes(key));
 }
 
+//@desc Gets events within a specified interval of time
+//@route GET /api/admin/getEvents
+//@access Private
+const getEvents = asyncHandler(async (req, res) => {
+    const fromDate = req.body.fromDate;
+    const upToDate = req.body.upToDate;
+    const allEvents = await Event.find({}); 
+
+    if (fromDate && upToDate) {
+        if (fromDate == upToDate) {
+            // Returns all events that have their interval overlap the date provided
+        } else {
+            // Returns all events between fromDate and upToDate
+        }
+    } else if (fromDate) {
+        // Returns all events after fromDate
+    } else if (upToDate) {
+        // Returns all events before upToDate
+    } else {
+        // Returns all events
+    }
+
+    // Return the events basic fields
+    res.status(200).json(events);
+});
+
 //@desc Get all users
 //@route GET /api/admin/getAllUsers
 //@access Private
@@ -138,4 +164,4 @@ const checkInById = asyncHandler(async (req, res) => {
     }
 });
 
-module.exports = { getAllUsers, getUserById, createUser, patchUserById, deleteUserById, checkInById };
+module.exports = { getEvents, getAllUsers, getUserById, createUser, patchUserById, deleteUserById, checkInById };
