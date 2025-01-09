@@ -78,6 +78,16 @@ const userSchema = mongoose.Schema(
             default: -1
         },
     }
+    // passwordToken: {
+    //     hash: {
+    //         type: String,
+    //         default: "somehash"
+    //     },
+    //     expires: {
+    //         type: Number,
+    //         default: -1
+    //     },
+    // }
 },
 {
     timestamps: true,
