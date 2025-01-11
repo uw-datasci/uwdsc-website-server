@@ -63,6 +63,7 @@ const registerUser = asyncHandler(async (req, res) => {
     term: term,
     heardFromWhere: heardFromWhere,
     memberIdeas: memberIdeas,
+    isEmailVerified: true, // To remove when verification works
     token: {
       hash: token,
       expires: expiry,
