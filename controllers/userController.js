@@ -176,7 +176,7 @@ const sendVerificationEmail = asyncHandler(async (req, res) => {
         address: "membership-no-reply-f24@uwdatascience.ca",
       },
       to: email,
-      subject: "DSC Account Verification",
+      subject: "DSC Account Confirmation",
       html: emailHtml,
       attachments: [
         {
