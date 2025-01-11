@@ -133,10 +133,10 @@ const sendVerificationEmail = asyncHandler(async (req, res) => {
     throw Error("Unable to find user.")
   }
 
-  if (user.isEmailVerified) {
-    res.status(400);
-    throw Error("Email is already verified.")
-  }
+  // if (user.isEmailVerified) {
+  //   res.status(400);
+  //   throw Error("Email is already verified.")
+  // }
 
   console.log("Generating verification token...")
   const token = uuidv4();
