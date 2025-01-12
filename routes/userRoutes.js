@@ -10,13 +10,14 @@ const {
   getQr,
 } = require("../controllers/userController");
 const { requiresAll } = require("../middleware/errorHandler")
-const { validateToken } = require("../middleware/validateTokenHandler");
+const { validateUser } = require("../middleware/validateTokenHandler");
+const { getRegistrantById, attachRegistrantById, patchRegistrantById } = require("../controllers/registrantController");
 
 const router = express.Router();
 
-router.get("/qr", validateToken, getQr);
+router.get("/qr", validateUser, getQr);
 
-router.get("/user", validateToken, currentUser);
+router.get("/user", validateUser, currentUser);
 
 router.post("/user", 
   requiresAll([
@@ -52,5 +53,11 @@ router.patch("/verifyUser",
     "id",
     "token" 
   ]), verifyUser);
+
+router.get("/events/:event_id/registrants", validateUser, getRegistrantById);
+
+router.post("/events/:event_id/registrants", validateUser, attachRegistrantById);
+
+router.patch("/events/:event_id/registrants", validateUser, patchRegistrantById);
 
 module.exports = router;

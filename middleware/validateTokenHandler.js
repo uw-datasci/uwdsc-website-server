@@ -2,7 +2,7 @@ const asyncHandler = require("express-async-handler");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv").config();
 
-const validateToken = asyncHandler(async (req, res, next) => {
+const validateUser = asyncHandler(async (req, res, next) => {
   let token;
   let authHeader = req.headers.Authorization || req.headers.authorization;
   if (authHeader && authHeader.startsWith("Bearer")) {
@@ -53,4 +53,4 @@ const validateAdmin = asyncHandler(async (req, res, next) => {
 });
 
 
-module.exports = { validateToken, validateAdmin };
+module.exports = { validateUser, validateAdmin };

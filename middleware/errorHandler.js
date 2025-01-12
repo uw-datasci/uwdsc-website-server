@@ -10,7 +10,6 @@ const errorHandler = (err, req, res, next) => {
         message: err.message,
         stackTrace: err.stack,
       });
-      break;
     case HTTP_CONSTANTS.NOT_FOUND:
       res.json({
         title: "Not Found",
@@ -42,39 +41,38 @@ const errorHandler = (err, req, res, next) => {
         stackTrace: err.stack,
       });
     default:
-      console.log("Successfully handled request");
-      break;
+      res.status(500).json({
+        title: "Error",
+        message: err.message,
+        stackTrace: err.stack,
+      });
   }
 };
 
 const requiresAll = (paramArr) => {
   return asyncHandler(async (req, res, next) => {
-    const hasAllParams = paramArr.every((param) =>
-      req.body.hasOwnProperty(param)
-    );
-
+    const hasAllParams = paramArr.every((param) => req.body.hasOwnProperty(param));
+    
     if (!hasAllParams) {
-      res.status(400);
+      res.status(400)
       throw new Error("Missing required parameters");
     }
 
     next();
-  });
-};
+  })
+}
 
 const requiresOneOf = (paramArr) => {
   return asyncHandler(async (req, res, next) => {
-    const hasAllParams = paramArr.some((param) =>
-      req.body.hasOwnProperty(param)
-    );
-
+    const hasAllParams = paramArr.some((param) => req.body.hasOwnProperty(param));
+    
     if (!hasAllParams) {
-      res.status(400);
+      res.status(400)
       throw new Error("Missing required parameters");
     }
 
     next();
-  });
-};
+  })
+}
 
-module.exports = { errorHandler, requiresAll, requiresOneOf };
+module.exports = {errorHandler, requiresAll, requiresOneOf};

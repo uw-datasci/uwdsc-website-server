@@ -286,8 +286,7 @@ const getQr = asyncHandler(async (req, res) => {
     res.status(404)
     throw Error("Event Document not found.")
   }
-  
-  res.status(200).json({ id: id, eventName: await bcrypt.hash(event.eventName, 10) });
+  res.status(200).json({ id: id, eventName: await bcrypt.hash(event.name, 10) });
 });
 
 //@desc Verifiesd a user

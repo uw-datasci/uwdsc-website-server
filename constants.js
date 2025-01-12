@@ -8,6 +8,8 @@ exports.HTTP_CONSTANTS = {
   };
 
 exports.TYPE_CONSTANTS = {
+  ARRAY: "array",
   STRING: "string",
-  BOOL: "bool"
+  NUMBER: "number",
+  BOOL: "boolean"
 };

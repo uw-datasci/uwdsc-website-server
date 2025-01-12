@@ -9,7 +9,7 @@ const getAllRegistrants = asyncHandler(async (req, res) => {
   const eventId = req.params.event_id;
 
   const event = await Event.findOne({ _id: eventId }).populate(
-    "registrants.userId"
+    "registrants.user"
   );
   if (!event) {
     res.status(404);
@@ -21,21 +21,24 @@ const getAllRegistrants = asyncHandler(async (req, res) => {
 });
 
 //@desc Get registrant by ID
+//      Defaults to called ID if none provided
 //@route GET /api/admin/events/{{event_id}}/registrants/{{user_id}}
 //@access Private
 const getRegistrantById = asyncHandler(async (req, res) => {
   const eventId = req.params.event_id;
-  const userId = req.params.user_id;
+  console.log(req.user)
+
+  const userId = (req.user.userStatus == "member") ? req.user.id : req.params.user_id;
 
   const event = await Event.findOne({ _id: eventId }).populate(
-    "registrants.userId"
+    "registrants.user"
   );
   if (!event) {
     res.status(404);
     throw new Error("Event not found.");
   }
   const registrant = event.registrants.find(
-    (r) => r.userId._id.toString() === userId
+    (r) => r.user._id.toString() === userId
   );
   if (!registrant) {
     res.status(404);
@@ -52,8 +55,8 @@ const getRegistrantById = asyncHandler(async (req, res) => {
 //@access Private
 const attachRegistrantById = asyncHandler(async (req, res) => {
   const eventId = req.params.event_id;
-  const userId = req.body.userId;
-
+  const userId = (req.user.userStatus == "member") ? req.user.id : req.body.userId;
+  
   const [event, user] = await Promise.all([
     Event.findOne({ _id: eventId }),
     User.findOne({ _id: userId }),
@@ -69,36 +72,37 @@ const attachRegistrantById = asyncHandler(async (req, res) => {
     throw new Error("User not found.");
   }
 
+  console.log(event.registrants)
   const registrant = event.registrants.find(
-    (r) => r.userId.toString() === userId
+    (r) => r.user.toString() === userId
   );
+
+  console.log(registrant)
 
   if (registrant) {
     res.status(400);
     throw new Error("Registrant already exists.");
   }
 
-  const newRegistrant = { userId: userId };
   const additionalFieldsSchema = event.additionalFieldsSchema;
   additionalFieldsSchema.forEach((value, key) => {
-    if (req.body[key]) {
-      newRegistrant[key] = req.body[key].toString();
-    } else {
+    if (!req.body.additionalFields.hasOwnProperty(key)) {
       throw new Error(`Missing required field ${key}.`);
     }
   });
+  const newRegistrant = { user: userId, checkedIn: false, selected: false, additionalFields: req.body.additionalFields };
 
   await Event.updateOne(
     { _id: eventId },
     { $push: { registrants: newRegistrant } }
-  );
+  )
 
   const updatedEvent = await Event.findOne({ _id: eventId }).populate(
-    "registrants.userId"
+    "registrants.user"
   );
 
   const addedRegistrant = updatedEvent.registrants.find(
-    (r) => r.userId._id.toString() === userId
+    (r) => r.user.toString() === userId
   );
 
   return res.status(200).json({ registrant: addedRegistrant });
@@ -108,19 +112,19 @@ const attachRegistrantById = asyncHandler(async (req, res) => {
 //@route PATCH /api/admin/events/{{event_id}}/registrants/{{user_id}}
 //@access Private
 const patchRegistrantById = asyncHandler(async (req, res) => {
+  const isMember = req.user.userStatus == "member"; 
   const eventId = req.params.event_id;
-  const { userId, ...additionalFields } = req.body;
+  const { checkedIn, selected, ...additionalFields } = req.body;
+  const userId = (isMember) ? req.user.id : req.body.userId;
 
-  const event = await Event.findOne({ _id: eventId }).populate(
-    "registrants.userId"
-  );
+  const event = await Event.findOne({ _id: eventId })
   if (!event) {
     res.status(404);
     throw new Error("Event not found.");
   }
 
   const registrant = event.registrants.find(
-    (r) => r.userId._id.toString() === userId
+    (r) => r.user.toString() === userId
   );
   if (!registrant) {
     res.status(404);
@@ -129,10 +133,18 @@ const patchRegistrantById = asyncHandler(async (req, res) => {
 
   const additionalFieldsSchema = event.additionalFieldsSchema;
   additionalFieldsSchema.forEach((value, key) => {
-    if (additionalFields && additionalFields[key]) {
-      registrant[key] = additionalFields[key].toString();
+    if (additionalFields && additionalFields.additionalFields[key]) {
+      registrant.additionalFields.set(key, additionalFields.additionalFields[key]);
     }
   });
+
+  if (!isMember && checkedIn) {
+    registrant.checkedIn = checkedIn;
+  }
+
+  if (!isMember && selected) {
+    registrant.selected = selected;
+  }
 
   await event.save();
 

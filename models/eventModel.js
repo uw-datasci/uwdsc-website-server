@@ -7,48 +7,6 @@ const {
 } = require("../models/validators");
 const { TYPE_CONSTANTS } = require("../constants");
 
-const createUserRegistrantSchema = (additionalFieldsSchema) => {
-  console.log(additionalFieldsSchema);
-  if (additionalFieldsSchema) {
-    return new mongoose.Schema(
-      {
-        user: {
-          type: Map,
-          of: mongoose.Schema.Types.Mixed,
-          validate: {
-            validator: mapKeysValidator(User.schema),
-            message: mapKeysErrorMessage(User.schema),
-          },
-        },
-        registrant: {
-          type: Map,
-          of: mongoose.Schema.Types.Mixed,
-          validate: {
-            validator: mapKeysValidator(additionalFieldsSchema),
-            message: mapKeysErrorMessage(additionalFieldsSchema),
-          },
-        },
-      },
-      { _id: false }
-    );
-  } else {
-    console.log("ENTERED");
-    return new mongoose.Schema(
-      {
-        user: {
-          type: Map,
-          of: mongoose.Schema.Types.Mixed,
-          validate: {
-            validator: mapKeysValidator(User.Schema),
-            message: mapKeysErrorMessage(User.Schema),
-          },
-        },
-      },
-      { _id: false }
-    );
-  }
-};
-
 const eventSchema = mongoose.Schema(
   {
     // Basic information for event
@@ -94,11 +52,18 @@ const eventSchema = mongoose.Schema(
     // Requirements for users to be checked-in
     requirements: {
       type: Map,
-      of: mongoose.Schema.Types.Map,
+      of: mongoose.Schema.Types.Mixed,
       user: {
         type: Map,
         of: mongoose.Schema.Types.Mixed,
-        required: true
+      },
+      checkedIn: {
+        type: Boolean,
+        default: false
+      },
+      selected: {
+        type: Boolean,
+        default: true
       },
       registrant: {
         type: Map,
@@ -113,11 +78,18 @@ const eventSchema = mongoose.Schema(
       of: mongoose.Schema.Types.Map,
       before: {
         type: Map,
-        of: mongoose.Schema.Types.Map,
+        of: mongoose.Schema.Types.Mixed,
         user: {
           type: Map,
           of: mongoose.Schema.Types.Mixed,
           required: true
+        },
+        checkedIn: {
+          type: String,
+          default: "Checked In"
+        },
+        selected: {
+          type: String,
         },
         registrant: {
           type: Map,
@@ -128,11 +100,18 @@ const eventSchema = mongoose.Schema(
       },
       after: {
         type: Map,
-        of: mongoose.Schema.Types.Map,
+        of: mongoose.Schema.Types.Mixed,
         user: {
           type: Map,
           of: mongoose.Schema.Types.Mixed,
           required: true
+        },
+        checkedIn: {
+          type: String,
+          default: "Checked In"
+        },
+        selected: {
+          type: String,
         },
         registrant: {
           type: Map,
@@ -147,19 +126,20 @@ const eventSchema = mongoose.Schema(
     // Schema of additional fields, for now mainly for admin panel
     additionalFieldsSchema: {
       type: Map,
-      of: mongoose.Schema.Types.Mixed,
+      of: {
+        type: String,
+        enum: [TYPE_CONSTANTS.ARRAY, TYPE_CONSTANTS.STRING, TYPE_CONSTANTS.NUMBER, TYPE_CONSTANTS.BOOL], 
+      },
       required: true,
-      default: {
-        userId: TYPE_CONSTANTS.STRING,
-        isCheckedIn: TYPE_CONSTANTS.BOOL
-      }
+      default: {}
     },
 
     // All users that have registered for this event
     registrants: {
       type: [
         {
-          userId: {
+          _id: false,
+          user: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "users",
             required: true,
@@ -167,11 +147,17 @@ const eventSchema = mongoose.Schema(
           checkedIn: {
             type: Boolean,
             default: false,
+            required: true,
+          },
+          selected: {
+            type: Boolean,
+            default: false,
+            required: true,
           },
           additionalFields: {
             type: Map,
             of: mongoose.Schema.Types.Mixed
-          }
+          },
         }
       ],
       required: true,
@@ -191,7 +177,7 @@ const eventSchema = mongoose.Schema(
  */
 const mapValidator = (schema, map, next) => {
   if (map && !mapKeysValidator(schema)(map)) {
-    const errorMessage = mapKeysErrorMessage(schema)({ value: map});
+    const errorMessage = mapKeysErrorMessage(schema)({ value: map });
     throw next(new Error(errorMessage));
   }
 }
@@ -206,6 +192,10 @@ const convertInnerObjectsToMaps = (outerMap) => {
 }
 
 eventSchema.pre("validate", function (next) {
+  if (!this.isRegistrationRequired) {
+    this.additionalFieldsSchema = {}
+  }
+
   // To fix
   this.toDisplay = new Map([
     ["before", convertInnerObjectsToMaps(this.toDisplay.get("before"))],
@@ -213,30 +203,26 @@ eventSchema.pre("validate", function (next) {
   ]) 
 
   if (this.startTime && this.endTime && this.startTime >= this.endTime) {
-    return next(new Error('Start time must be before end time.'));
+    return next(new Error("Start time must be before end time."));
   }
 
-  if (this.additionalFieldsSchema.size > 0) {
-    const schemaDefinition = {}
-    this.additionalFieldsSchema.forEach((type, key) => {
-      schemaDefinition[key] = {
-        type: type
-      };
-    });
+  const schemaDefinition = {}
+  this.additionalFieldsSchema.forEach((type, key) => {
+    schemaDefinition[key] = {
+      type: type
+    };
+  });
 
-    const schema = new mongoose.Schema(schemaDefinition);
+  const schema = new mongoose.Schema(schemaDefinition);
 
-    mapValidator(schema, this.toDisplay.get("before")?.get("registrant"), next);
-    mapValidator(schema, this.toDisplay.get("after")?.get("registrant"), next);
-    mapValidator(schema, this.requirements.get("registrant"), next);
-
-    console.log("passed")
-  }
+  mapValidator(schema, this.toDisplay.get("before")?.get("registrant"), next);
+  mapValidator(schema, this.toDisplay.get("after")?.get("registrant"), next);
+  mapValidator(schema, this.requirements.get("registrant"), next);
 
   mapValidator(User.schema, this.toDisplay.get("before")?.get("user"), next);
   mapValidator(User.schema, this.toDisplay.get("after")?.get("user"), next);
   mapValidator(User.schema, this.requirements.get("user"), next);
-
+  
   next();
 });
 
@@ -244,8 +230,8 @@ eventSchema.pre("save", async function (next) {
   if (!this.isRegistrationRequired) {
     const allUsers = await User.find(); 
     this.registrants = allUsers.map((user) => ({
-      userId: user._id,
-      checkedIn: false,
+      user: user._id,
+      selected: true
     }));
   }
   next();

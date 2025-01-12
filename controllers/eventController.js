@@ -37,8 +37,7 @@ const getAllEvents = asyncHandler(async (req, res) => {
 
   } catch (error) {
     console.error(error);
-    res.status(404);
-    throw new Error("Unable to find events");
+    throw err;
   }
 });
 
@@ -46,7 +45,7 @@ const getAllEvents = asyncHandler(async (req, res) => {
 //@route GET /api/admin/events/:id
 //@access private
 const getEventById = asyncHandler(async (req, res) => {
-  const id = req.params.id;
+  const id = req.params.event_id;
   const event = await Event.findOne({ _id: id });
   if (!event) {
     res.status(404);
@@ -88,12 +87,10 @@ const createEvent = asyncHandler(async (req, res) => {
       toDisplay,
       additionalFieldsSchema
     });
-    console.log(`Event created ${event}`);
     res.status(201).json({ _id: event.id });
   } catch (err) {
     console.log(err);
-    res.status(500);
-    throw new Error("Failed to create event");
+    throw err;
   }
 });
 

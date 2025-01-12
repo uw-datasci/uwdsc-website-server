@@ -35,7 +35,7 @@ router.patch("/users/checkIn/:id", requiresAll(["eventName"]), checkInById);
 
 router.delete("/users/:id", deleteUserById);
 
-router.use("/:event_id/registrants", require("./registrantRoutes"));
+router.use("/events/:event_id/registrants", require("./registrantRoutes"));
 
 router.get("/events", getAllEvents);
 
