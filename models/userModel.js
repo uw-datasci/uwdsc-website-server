@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const Events = require("./eventModel");
+const Events = mongoose.model("events")
 
 const userSchema = mongoose.Schema(
     {

@@ -281,12 +281,14 @@ const currentUser = asyncHandler(async (req, res) => {
 const getQr = asyncHandler(async (req, res) => {
   const id = req.user.id;
 
-  let event = await Event.findOne({ _id: process.env.EVENT_ID });
-  if (!event) {
-    res.status(404)
-    throw Error("Event Document not found.")
+  
+  let events = await Event.find().eventsHappeningOnBuffered(new Date());
+  if (!events) {
+    res.status(404).json({ isEventHappening: false })
   }
-  res.status(200).json({ id: id, eventName: await bcrypt.hash(event.name, 10) });
+
+  console.log(events)
+  res.status(200).json({ isEventHappening: false, id: id, eventName: await bcrypt.hash(events.name, 10) });
 });
 
 //@desc Verifiesd a user

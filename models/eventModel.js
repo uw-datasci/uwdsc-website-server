@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const User = require("./userModel");
 const { v4: uuidv4 } = require("uuid");
 const User = mongoose.model("users");
 const {
@@ -80,16 +79,7 @@ const eventSchema = mongoose.Schema(
     startBuffer: {
       type: Number,
       required: true,
-      default: 0,
-      validate: {
-        validator: startBuffer => startBuffer >= 0,
-        message: "start buffer must be a non-negative number of minutes"
-      }
-    },
-    startBuffer: {
-      type: Number,
-      required: true,
-      default: 0,
+      default: 20,
       validate: {
         validator: startBuffer => startBuffer >= 0,
         message: "start buffer must be a non-negative number of minutes"
@@ -99,7 +89,6 @@ const eventSchema = mongoose.Schema(
       type: Date,
       required: true,
     },
-
     endBuffer: {
       type: Number,
       required: true,
@@ -318,6 +307,11 @@ eventSchema.query.byDateRange = function (start, end) {
 // Return all event happening on dateTime
 eventSchema.query.eventsHappeningOn = function (dateTime) {
   return this.where("startTime").lte(dateTime).where("endTime").gte(dateTime);
+};
+
+// Return all event happening on dateTime with buffer
+eventSchema.query.eventsHappeningOnBuffered = function (dateTime) {
+  return this.where("bufferedStart").lte(dateTime).where("bufferedEnd").gte(dateTime);
 };
 
 // Return all events happening before dateTime
