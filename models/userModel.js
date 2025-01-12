@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const Events = mongoose.model('events');
+const Events = require("./eventModel");
 
 const userSchema = mongoose.Schema(
     {
@@ -108,25 +108,31 @@ const userSchema = mongoose.Schema(
 );
 
 userSchema.pre("save", async function (next) {
+    if (!this.isNew) {
+        return;
+    }
+
     const openEventIds = await Events.find({
         $or: [{
             startTime: {
                 $gte: new Date()
-            },
-            $and: {
+            }
+        },
+        {
+            $and: [{
                 startTime: {
                     $lt: new Date()
                 },
                 endTime: {
                     $gte: new Date()
                 }
-            }
+            }]
         }],
         isRegistrationRequired: false
-    }, { _id: 1});
+    }, { _id: 1 });
 
     openEventIds.forEach(async eventId => {
-        await Events.findByIdAndUpdate(eventId, { $push: { userId: this._id }});
+        await Events.findByIdAndUpdate(eventId, { $push: { userId: this._id } });
         await Events.find({ _id: eventId }).populate("registrations.userId");
     });
 
