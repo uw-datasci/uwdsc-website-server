@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const User = require("./userModel");
 const { v4: uuidv4 } = require("uuid");
 const User = mongoose.model("users");
 const {
@@ -6,6 +7,49 @@ const {
   mapKeysErrorMessage,
 } = require("../models/validators");
 const { TYPE_CONSTANTS } = require("../constants");
+const { addMinutes } = require("date-fns");
+
+const createUserRegistrantSchema = (additionalFieldsSchema) => {
+  console.log(additionalFieldsSchema);
+  if (additionalFieldsSchema) {
+    return new mongoose.Schema(
+      {
+        user: {
+          type: Map,
+          of: mongoose.Schema.Types.Mixed,
+          validate: {
+            validator: mapKeysValidator(User.schema),
+            message: mapKeysErrorMessage(User.schema),
+          },
+        },
+        registrant: {
+          type: Map,
+          of: mongoose.Schema.Types.Mixed,
+          validate: {
+            validator: mapKeysValidator(additionalFieldsSchema),
+            message: mapKeysErrorMessage(additionalFieldsSchema),
+          },
+        },
+      },
+      { _id: false }
+    )
+  } else {
+    console.log("ENTERED");
+    return new mongoose.Schema(
+      {
+        user: {
+          type: Map,
+          of: mongoose.Schema.Types.Mixed,
+          validate: {
+            validator: mapKeysValidator(User.Schema),
+            message: mapKeysErrorMessage(User.Schema),
+          },
+        },
+      },
+      { _id: false }
+    )
+  }
+};
 
 const eventSchema = mongoose.Schema(
   {
@@ -31,11 +75,39 @@ const eventSchema = mongoose.Schema(
       validate: {
         validator: (startTime) =>  { console.log("start:", startTime); return startTime > new Date();}, // Ensure startTime is in the future
         message: "startTime must be in the future",
-      },
+      }
+    },
+    startBuffer: {
+      type: Number,
+      required: true,
+      default: 0,
+      validate: {
+        validator: startBuffer => startBuffer >= 0,
+        message: "start buffer must be a non-negative number of minutes"
+      }
+    },
+    startBuffer: {
+      type: Number,
+      required: true,
+      default: 0,
+      validate: {
+        validator: startBuffer => startBuffer >= 0,
+        message: "start buffer must be a non-negative number of minutes"
+      }
     },
     endTime: {
       type: Date,
       required: true,
+    },
+
+    endBuffer: {
+      type: Number,
+      required: true,
+      default: 0,
+      validate: {
+        validator: endBuffer => endBuffer >= 0,
+        message: "end buffer must be a non-negative number of minutes"
+      }
     },
 
     // Sensitve information for event
@@ -266,6 +338,14 @@ eventSchema.query.allEvents = function () {
 
 eventSchema.virtual("registrantCount").get(function () {
   return this.registrants.length;
+});
+
+eventSchema.virtual("bufferedStart").get(function () {
+  return addMinutes(this.startTime, this.startBuffer);
+});
+
+eventSchema.virtual("bufferedEnd").get(function () {
+  return addMinutes(this.endTime, this.endBuffer);
 });
 
 eventSchema.set("toJSON", { virtuals: true });
