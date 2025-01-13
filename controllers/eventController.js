@@ -1,23 +1,26 @@
 const asyncHandler = require("express-async-handler");
-
-const Event = require("../models/eventModel");
+const { default: mongoose } = require("mongoose");
+const Event = mongoose.model("events");
 const { v4: uuidv4 } = require("uuid");
 
 //@desc Get all events 
 //@route GET /api/admin/events
 //@access private
 const getAllEvents = asyncHandler(async (req, res) => {
-  const { fromDate, upToDate } = req.query;
+  const { fromDate, upToDate, buffered } = req.query;
   const fromDateObj = fromDate ? new Date(fromDate) : null;
   const upToDateObj = upToDate ? new Date(upToDate) : null;
 
   let events = [];
   try {
-    if (fromDateObj && upToDateObj && fromDateObj !== upToDateObj) {
+    if (fromDateObj && upToDateObj && fromDateObj.getTime() !== upToDateObj.getTime()) {
       events = await Event.find().byDateRange(fromDateObj, upToDateObj);
     } else if (fromDateObj && upToDateObj) {
-      events = await Event.find().eventsHappeningOn(fromDateObj);
-      console.log(events);
+      if (buffered) {
+        events = await Event.find().eventsHappeningOnBuffered(fromDateObj);
+      } else {
+        events = await Event.find().eventsHappeningOn(fromDateObj);
+      }
     } else if (fromDateObj) {
       events = await Event.find().eventsHappeningAfter(fromDateObj);
     } else if (upToDateObj) {
@@ -29,6 +32,7 @@ const getAllEvents = asyncHandler(async (req, res) => {
     events = events.map(event => {
       const eventObject = event.toJSON();
       delete eventObject.registrants;
+      delete eventObject.secretName;
 
       return eventObject;
     });
@@ -46,11 +50,13 @@ const getAllEvents = asyncHandler(async (req, res) => {
 //@access private
 const getEventById = asyncHandler(async (req, res) => {
   const id = req.params.event_id;
-  const event = await Event.findOne({ _id: id });
+  const event = (await Event.findOne({ _id: id })).toJSON();
   if (!event) {
     res.status(404);
     throw Error("Unable to find event.");
   }
+
+  delete event.secretName
 
   res.status(200).json(event);
 });
@@ -65,35 +71,46 @@ const createEvent = asyncHandler(async (req, res) => {
     description,
     location,
     startTime,
+    bufferedStartTime,
     endTime,
+    bufferedEndTime,
     requirements,
     toDisplay,
     additionalFieldsSchema
   } = req.body;
 
   try {
-    console.log(req.body);
-    const startDate = new Date(startTime);
-    const endDate = new Date(endTime);
-    console.log(endDate > startDate);
-    const event = await Event.create({
+    // Basic event data
+    const newEventData = {
       name,
       isRegistrationRequired,
       description,
       location,
-      startTime,
-      endTime,
+      startTime: new Date(startTime),
+      endTime: new Date(endTime),
       requirements,
       toDisplay,
       additionalFieldsSchema
-    });
+    };
+
+    // Only set bufferedStartDate if bufferedStartTime was given
+    if (bufferedStartTime) {
+      newEventData.bufferedStartDate = new Date(bufferedStartTime);
+    }
+
+    // Only set bufferedEndDate if bufferedEndTime was given
+    if (bufferedEndTime) {
+      newEventData.bufferedEndDate = new Date(bufferedEndTime);
+    }
+
+    // Create the event
+    const event = await Event.create(newEventData);
     res.status(201).json({ _id: event.id });
   } catch (err) {
-    console.log(err);
+    console.error(err);
     throw err;
   }
 });
-
 //@desc Update an existing event
 //@route PATCH /api/admin/events/:id
 //@access private

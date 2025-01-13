@@ -3,6 +3,8 @@ const connectDb = require("./config/dbConnection");
 const { errorHandler } = require("./middleware/errorHandler");
 const dotenv = require("dotenv").config();
 const cors = require("cors");
+require("./models/eventModel")
+require("./models/userModel")
 
 connectDb();
 const app = express();

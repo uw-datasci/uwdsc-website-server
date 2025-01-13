@@ -1,6 +1,7 @@
 const asyncHandler = require("express-async-handler");
-const Event = require("../models/eventModel");
-const User = require("../models/userModel");
+const { default: mongoose } = require("mongoose");
+const User = mongoose.model("users");
+const Event = mongoose.model("events");
 
 //@desc Get all registrants
 //@route GET /api/admin/events/{{event_id}}/registrants
@@ -115,7 +116,7 @@ const patchRegistrantById = asyncHandler(async (req, res) => {
   const isMember = req.user.userStatus == "member"; 
   const eventId = req.params.event_id;
   const { checkedIn, selected, ...additionalFields } = req.body;
-  const userId = (isMember) ? req.user.id : req.body.userId;
+  const userId = (isMember) ? req.user.id : req.params.user_id;
 
   const event = await Event.findOne({ _id: eventId })
   if (!event) {

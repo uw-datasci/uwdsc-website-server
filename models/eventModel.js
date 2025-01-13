@@ -1,54 +1,12 @@
 const mongoose = require("mongoose");
 const { v4: uuidv4 } = require("uuid");
-const User = mongoose.model("users");
 const {
   mapKeysValidator,
   mapKeysErrorMessage,
 } = require("../models/validators");
 const { TYPE_CONSTANTS } = require("../constants");
 const { addMinutes } = require("date-fns");
-
-const createUserRegistrantSchema = (additionalFieldsSchema) => {
-  console.log(additionalFieldsSchema);
-  if (additionalFieldsSchema) {
-    return new mongoose.Schema(
-      {
-        user: {
-          type: Map,
-          of: mongoose.Schema.Types.Mixed,
-          validate: {
-            validator: mapKeysValidator(User.schema),
-            message: mapKeysErrorMessage(User.schema),
-          },
-        },
-        registrant: {
-          type: Map,
-          of: mongoose.Schema.Types.Mixed,
-          validate: {
-            validator: mapKeysValidator(additionalFieldsSchema),
-            message: mapKeysErrorMessage(additionalFieldsSchema),
-          },
-        },
-      },
-      { _id: false }
-    )
-  } else {
-    console.log("ENTERED");
-    return new mongoose.Schema(
-      {
-        user: {
-          type: Map,
-          of: mongoose.Schema.Types.Mixed,
-          validate: {
-            validator: mapKeysValidator(User.Schema),
-            message: mapKeysErrorMessage(User.Schema),
-          },
-        },
-      },
-      { _id: false }
-    )
-  }
-};
+const { userSchema } = require("./userModel");
 
 const eventSchema = mongoose.Schema(
   {
@@ -72,31 +30,21 @@ const eventSchema = mongoose.Schema(
       type: Date,
       required: true,
       validate: {
-        validator: (startTime) =>  { console.log("start:", startTime); return startTime > new Date();}, // Ensure startTime is in the future
+        validator: (startTime) =>  { return startTime > new Date();}, // Ensure startTime is in the future
         message: "startTime must be in the future",
       }
     },
-    startBuffer: {
-      type: Number,
-      required: true,
-      default: 20,
-      validate: {
-        validator: startBuffer => startBuffer >= 0,
-        message: "start buffer must be a non-negative number of minutes"
-      }
+    bufferedStartTime: {
+      type: Date,
+      required: true
     },
     endTime: {
       type: Date,
       required: true,
     },
-    endBuffer: {
-      type: Number,
+    bufferedEndTime: {
+      type: Date,
       required: true,
-      default: 0,
-      validate: {
-        validator: endBuffer => endBuffer >= 0,
-        message: "end buffer must be a non-negative number of minutes"
-      }
     },
 
     // Sensitve information for event
@@ -275,19 +223,34 @@ eventSchema.pre("validate", function (next) {
   });
 
   const schema = new mongoose.Schema(schemaDefinition);
-
+  
   mapValidator(schema, this.toDisplay.get("before")?.get("registrant"), next);
   mapValidator(schema, this.toDisplay.get("after")?.get("registrant"), next);
   mapValidator(schema, this.requirements.get("registrant"), next);
+  
+  mapValidator(userSchema, this.toDisplay.get("before")?.get("user"), next);
+  mapValidator(userSchema, this.toDisplay.get("after")?.get("user"), next);
+  mapValidator(userSchema, this.requirements.get("user"), next);
 
-  mapValidator(User.schema, this.toDisplay.get("before")?.get("user"), next);
-  mapValidator(User.schema, this.toDisplay.get("after")?.get("user"), next);
-  mapValidator(User.schema, this.requirements.get("user"), next);
+  if (!this.bufferedStartTime) {
+    this.bufferedStartTime = addMinutes(this.startTime, -20);
+  } else if (this.bufferedStartTime > this.startTime) {
+    throw next(new Error("bufferedStartTime must be before startTime"));
+  }
+
+  if (!this.bufferedEndTime) {
+    this.bufferedEndTime = new Date(this.endTime);
+  } else if (this.bufferedEndTime < this.endTime) {
+    throw next(new Error("bufferedEndTime must be after endTime"));
+  }
+
   
   next();
 });
 
 eventSchema.pre("save", async function (next) {
+  const User = mongoose.model("users");
+
   if (!this.isRegistrationRequired) {
     const allUsers = await User.find(); 
     this.registrants = allUsers.map((user) => ({
@@ -295,12 +258,12 @@ eventSchema.pre("save", async function (next) {
       selected: true
     }));
   }
+
   next();
 });
 
 // Return all events that would happen from start to end
 eventSchema.query.byDateRange = function (start, end) {
-  console.log(start)
   return this.where("startTime").gte(start).lte(end);
 };
 
@@ -311,7 +274,7 @@ eventSchema.query.eventsHappeningOn = function (dateTime) {
 
 // Return all event happening on dateTime with buffer
 eventSchema.query.eventsHappeningOnBuffered = function (dateTime) {
-  return this.where("bufferedStart").lte(dateTime).where("bufferedEnd").gte(dateTime);
+  return this.where("bufferedStartTime").lte(dateTime).where("bufferedEndTime").gte(dateTime);
 };
 
 // Return all events happening before dateTime
@@ -321,7 +284,6 @@ eventSchema.query.eventsHappeningBefore = function (dateTime) {
 
 // Return all events happening after dateTime
 eventSchema.query.eventsHappeningAfter = function (dateTime) {
-  console.log(dateTime);
   return this.where("startTime").gte(dateTime);
 };
 
@@ -331,15 +293,11 @@ eventSchema.query.allEvents = function () {
 }
 
 eventSchema.virtual("registrantCount").get(function () {
-  return this.registrants.length;
-});
-
-eventSchema.virtual("bufferedStart").get(function () {
-  return addMinutes(this.startTime, this.startBuffer);
-});
-
-eventSchema.virtual("bufferedEnd").get(function () {
-  return addMinutes(this.endTime, this.endBuffer);
+  if (this.registrant) {
+    return this.registrants.length;
+  } else {
+    return 0;
+  }
 });
 
 eventSchema.set("toJSON", { virtuals: true });
@@ -348,4 +306,8 @@ eventSchema.set("toObject", { virtuals: true });
 eventSchema.index({ secretName: 1 }, { unique: true });
 eventSchema.index({ startTime: 1 });
 
-module.exports = mongoose.model("events", eventSchema);
+const eventModel = mongoose.model("events", eventSchema); 
+module.exports = {
+    eventSchema,
+    eventModel
+}

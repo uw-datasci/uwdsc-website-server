@@ -1,8 +1,8 @@
 const asyncHandler = require("express-async-handler");
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const User = require("../models/userModel");
-const Event = require("../models/eventModel");
+const { default: mongoose } = require("mongoose");
+const User = mongoose.model("users");
+const Event = mongoose.model("events");
 const dotenv = require("dotenv").config();
 
 function getSchemaKeysExcept(model, excludeKeys = []) {

@@ -7,8 +7,9 @@ const nodemailer = require("nodemailer");
 const fs = require("fs");
 const dotenv = require("dotenv").config();
 
-const User = require("../models/userModel");
-const Event = require("../models/eventModel");
+const { default: mongoose } = require("mongoose");
+const User = mongoose.model("users");
+const Event = mongoose.model("events");
 const transporter = nodemailer.createTransport({
   service: "gmail",
   host: "smtp.google.com",
@@ -74,6 +75,7 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new Error("There was an issue creating your account.");
   }
   console.log(`User created ${user}`);
+
   res.status(201).json({ _id: user.id, email: user.email });
 
 });
@@ -281,14 +283,25 @@ const currentUser = asyncHandler(async (req, res) => {
 const getQr = asyncHandler(async (req, res) => {
   const id = req.user.id;
 
-  
   let events = await Event.find().eventsHappeningOnBuffered(new Date());
   if (!events) {
-    res.status(404).json({ isEventHappening: false })
+    res.status(404)
+    throw new Error("There are no events happening right now.");
   }
+  
+  events = await Promise.all(
+    events.map(async (event) => {
+      return {
+        id: event._id,
+        secret: await bcrypt.hash(id + process.env.ACCESS_TOKEN_SECRET + event.secretName, 10)
+      }
+    })
+  );
 
   console.log(events)
-  res.status(200).json({ isEventHappening: false, id: id, eventName: await bcrypt.hash(events.name, 10) });
+  console.log(new Date())
+
+  res.status(200).json({ id: id, eventArray: events });
 });
 
 //@desc Verifiesd a user
