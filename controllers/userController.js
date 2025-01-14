@@ -64,6 +64,7 @@ const registerUser = asyncHandler(async (req, res) => {
     term: term,
     heardFromWhere: heardFromWhere,
     memberIdeas: memberIdeas,
+    isEmailVerified: true, // To remove when verification works
     token: {
       hash: token,
       expires: expiry,
@@ -134,10 +135,10 @@ const sendVerificationEmail = asyncHandler(async (req, res) => {
     throw Error("Unable to find user.")
   }
 
-  if (user.isEmailVerified) {
-    res.status(400);
-    throw Error("Email is already verified.")
-  }
+  // if (user.isEmailVerified) {
+  //   res.status(400);
+  //   throw Error("Email is already verified.")
+  // }
 
   console.log("Generating verification token...")
   const token = uuidv4();
@@ -177,7 +178,7 @@ const sendVerificationEmail = asyncHandler(async (req, res) => {
         address: "membership-no-reply-f24@uwdatascience.ca",
       },
       to: email,
-      subject: "DSC Account Verification",
+      subject: "DSC Account Confirmation",
       html: emailHtml,
       attachments: [
         {
