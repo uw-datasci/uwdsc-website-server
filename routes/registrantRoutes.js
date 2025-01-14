@@ -3,6 +3,7 @@ const {
   getAllRegistrants,
   getRegistrantById,
   attachRegistrantById,
+  checkInRegistrantById,
   patchRegistrantById,
   deleteRegistrantById,
 } = require("../controllers/registrantController");
@@ -13,6 +14,7 @@ router.get("/", getAllRegistrants);
 
 router.get("/:user_id", getRegistrantById);
 router.post("/", attachRegistrantById);
+router.patch("/checkin/:user_id", checkInRegistrantById);
 router.patch("/:user_id", patchRegistrantById);
 router.delete("/:user_id", deleteRegistrantById);
 

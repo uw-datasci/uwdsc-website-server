@@ -1,5 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const { default: mongoose } = require("mongoose");
+const bcrypt = require("bcrypt");
 const User = mongoose.model("users");
 const Event = mongoose.model("events");
 
@@ -29,7 +30,7 @@ const getRegistrantById = asyncHandler(async (req, res) => {
   const eventId = req.params.event_id;
   console.log(req.user)
 
-  const userId = (req.user.userStatus == "member") ? req.user.id : req.params.user_id;
+  const userId = (req.user.userStatus == "member") ? req.user.id : (req.params.user_id ?? req.user.id);
 
   const event = await Event.findOne({ _id: eventId }).populate(
     "registrants.user"
@@ -56,7 +57,7 @@ const getRegistrantById = asyncHandler(async (req, res) => {
 //@access Private
 const attachRegistrantById = asyncHandler(async (req, res) => {
   const eventId = req.params.event_id;
-  const userId = (req.user.userStatus == "member") ? req.user.id : req.body.userId;
+  const userId = (req.user.userStatus == "member") ? req.user.id : (req.body.userId ?? req.user.id);
   
   const [event, user] = await Promise.all([
     Event.findOne({ _id: eventId }),
@@ -109,6 +110,40 @@ const attachRegistrantById = asyncHandler(async (req, res) => {
   return res.status(200).json({ registrant: addedRegistrant });
 });
 
+//@desc Checks in registrant by ID
+//@route PATCH /api/admin/events/{{event_id}}/registrants/checkin/{{user_id}}
+//@access Private
+const checkInRegistrantById = asyncHandler(async (req, res) => {
+  const {event_id, user_id} = req.params;
+  const userSecret = req.body.eventSecret;
+  const event = await Event.findOne({ _id: event_id });
+  const eventSecret = user_id + process.env.ACCESS_TOKEN_SECRET + event.secretName;
+  const registrant = event.registrants.find(
+    (r) => r.user.toString() === user_id
+  );
+
+  if (event && registrant) {
+    if (await bcrypt.compare(eventSecret, userSecret)){
+      if (!registrant.checkedIn) {
+        registrant.checkedIn = true;
+        console.log(event)
+        await event.save()
+        return res.status(200).json({registrant})
+      } else {
+        res.status(500)
+        throw new Error("Registrant is already checked in")
+      }
+    } else {
+      res.status(500)
+      throw new Error("Hash does not match")
+    }
+  } else {
+    res.status(404)
+    throw new Error("Event id is not valid or user is not registered")
+  }
+
+})
+
 //@desc Update registrant by ID
 //@route PATCH /api/admin/events/{{event_id}}/registrants/{{user_id}}
 //@access Private
@@ -139,11 +174,11 @@ const patchRegistrantById = asyncHandler(async (req, res) => {
     }
   });
 
-  if (!isMember && checkedIn) {
+  if (!isMember && checkedIn != undefined) {
     registrant.checkedIn = checkedIn;
   }
 
-  if (!isMember && selected) {
+  if (!isMember && selected != undefined) {
     registrant.selected = selected;
   }
 
@@ -174,6 +209,7 @@ module.exports = {
   getAllRegistrants,
   getRegistrantById,
   attachRegistrantById,
+  checkInRegistrantById,
   patchRegistrantById,
   deleteRegistrantById,
 };

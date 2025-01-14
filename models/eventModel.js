@@ -29,10 +29,6 @@ const eventSchema = mongoose.Schema(
     startTime: {
       type: Date,
       required: true,
-      validate: {
-        validator: (startTime) =>  { return startTime > new Date();}, // Ensure startTime is in the future
-        message: "startTime must be in the future",
-      }
     },
     bufferedStartTime: {
       type: Date,
@@ -204,12 +200,16 @@ eventSchema.pre("validate", function (next) {
   if (!this.isRegistrationRequired) {
     this.additionalFieldsSchema = {}
   }
-
+  
   // To fix
   this.toDisplay = new Map([
     ["before", convertInnerObjectsToMaps(this.toDisplay.get("before"))],
     ["after", convertInnerObjectsToMaps(this.toDisplay.get("after"))]
   ]) 
+
+  if (this.isNew && this.startTime < new Date()) {
+    next(new Error("Start time must be before end time."));
+  }
 
   if (this.startTime && this.endTime && this.startTime >= this.endTime) {
     return next(new Error("Start time must be before end time."));

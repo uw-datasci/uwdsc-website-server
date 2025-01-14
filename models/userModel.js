@@ -111,7 +111,6 @@ userSchema.pre("save", async function (next) {
     if (!this.isNew) {
         return;
     }
-    console.log("here")
 
     const openEventIds = await Event.find({
         $or: [{
