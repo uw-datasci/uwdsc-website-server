@@ -118,16 +118,22 @@ const checkInRegistrantById = asyncHandler(async (req, res) => {
   const userSecret = req.body.eventSecret;
   const event = await Event.findOne({ _id: event_id });
   const eventSecret = user_id + process.env.ACCESS_TOKEN_SECRET + event.secretName;
-  const registrant = event.registrants.find(
+  const registrantIndex = event.registrants.findIndex(
     (r) => r.user.toString() === user_id
   );
+  const registrant = event.registrants[registrantIndex];
 
   if (event && registrant) {
     if (await bcrypt.compare(eventSecret, userSecret)){
       if (!registrant.checkedIn) {
         registrant.checkedIn = true;
-        console.log(event)
-        await event.save()
+        await Event.findOneAndUpdate(
+          { _id: event_id }, 
+          { $set: { [`registrants.${registrantIndex}.checkedIn`]: true } }
+        )
+        
+        const user = await User.findOne({_id: registrant.user});
+        registrant.user = user
         return res.status(200).json({registrant})
       } else {
         res.status(500)

@@ -132,7 +132,7 @@ userSchema.pre("save", async function (next) {
     }, { _id: 1 });
     
     openEventIds.forEach(async eventId => {
-        const newRegistrant = { user: this._id, checkedIn: false, selected: false };
+        const newRegistrant = { user: this._id, checkedIn: false, selected: true };
 
         await Event.updateOne(
           { _id: eventId },

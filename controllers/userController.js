@@ -275,7 +275,16 @@ const sendForgotPasswordEmail = asyncHandler(async (req, res) => {
 //@route GET /api/users/current
 //@access private
 const currentUser = asyncHandler(async (req, res) => {
-  res.status(200).json(req.user);
+  let user = await User.findOne({ _id: req.user.id })
+  const userObject = user.toJSON();
+
+  delete userObject.token;
+  delete userObject.password;
+  delete userObject._id;
+  delete userObject.id;
+  delete userObject.__v;
+
+  res.status(200).json(userObject);
 });
 
 //@desc Get QR payload
