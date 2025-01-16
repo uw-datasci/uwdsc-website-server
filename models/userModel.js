@@ -28,13 +28,11 @@ const userSchema = mongoose.Schema(
         },
         watIAM: {
             type: String,
-            required: [true, "Please add the user watIAM"],
-            unique: [true, "watIAM already exists"]
         },
         faculty: {
             type: String,
             required: [true, "Please add the user faculty"],
-            enum: ["Math", "Engineering", "Science", "Arts", "Health", "Environment"]
+            enum: ["Math", "Engineering", "Science", "Arts", "Health", "Environment", "Other/Non-waterloo"]
         },
         term: {
             type: String,

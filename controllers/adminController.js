@@ -17,7 +17,7 @@ function getSchemaKeysExcept(model, excludeKeys = []) {
 //@route GET /api/admin/getAllUsers
 //@access Private
 const getAllUsers = asyncHandler(async (req, res) => {
-    const users = await User.find({}); // Retrieves all users from the database
+    const users = await User.find({}, {password: 0}); // Retrieves all users from the database
     res.status(200).json(users);
 });
 
@@ -90,11 +90,13 @@ const patchUserById = asyncHandler(async (req, res) => {
     );
 
     // hash and update password
-    if (updatedFields.hasOwnProperty("password")) {
+    console.log(updatedFields);
+    if (updatedFields.hasOwnProperty("password") && updatedFields.password != "") {
         const salt = await bcrypt.genSalt(10);
         updatedFields.password = await bcrypt.hash(updatedFields.password, salt);
     }
 
+    console.log(updatedFields);
     // Update user
     await User.findByIdAndUpdate(req.params.id, updatedFields, { new: true });
     res.status(200).json({ message : "Updated user", updatedFields : updatedFields});
