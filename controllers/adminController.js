@@ -94,6 +94,8 @@ const patchUserById = asyncHandler(async (req, res) => {
     if (updatedFields.hasOwnProperty("password") && updatedFields.password != "") {
         const salt = await bcrypt.genSalt(10);
         updatedFields.password = await bcrypt.hash(updatedFields.password, salt);
+    } else {
+        updatedFields.password = user.password;
     }
 
     console.log(updatedFields);
