@@ -159,6 +159,12 @@ const eventSchema = mongoose.Schema(
             default: false,
             required: true,
           },
+          status: {
+            type: String,
+            default: "Applied",
+            required: true,
+            enum: ["Accepted", "Confirmed", "Waitlist", "Rejected", "Expired", "Applied"]
+          },
           additionalFields: {
             type: Map,
             of: mongoose.Schema.Types.Mixed
