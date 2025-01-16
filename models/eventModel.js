@@ -212,6 +212,7 @@ eventSchema.pre("validate", function (next) {
     ["before", convertInnerObjectsToMaps(this.toDisplay.get("before"))],
     ["after", convertInnerObjectsToMaps(this.toDisplay.get("after"))]
   ]) 
+  this.requirements.set("user", new Map(Object.entries(this.requirements.get("user"))));
 
   if (this.isNew && this.startTime < new Date()) {
     next(new Error("Start time must be before end time."));
