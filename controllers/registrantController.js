@@ -28,7 +28,6 @@ const getAllRegistrants = asyncHandler(async (req, res) => {
 //@access Private
 const getRegistrantById = asyncHandler(async (req, res) => {
   const eventId = req.params.event_id;
-  console.log(req.user)
 
   const userId = (req.user.userStatus == "member") ? req.user.id : (req.params.user_id ?? req.user.id);
 
@@ -40,7 +39,9 @@ const getRegistrantById = asyncHandler(async (req, res) => {
     throw new Error("Event not found.");
   }
   const registrant = event.registrants.find(
-    (r) => r.user._id.toString() === userId
+    (r) => {
+      return r.user?._id.toString() === userId
+    }
   );
   if (!registrant) {
     res.status(404);
