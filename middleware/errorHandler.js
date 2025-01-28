@@ -5,7 +5,7 @@ const logger = pino();
 
 const errorHandler = (err, req, res, next) => {
   if (!res.statusCode) {
-    res.status(500);
+    res.status(HTTP_CONSTANTS.SERVER_ERROR);
   }
   const error = {
     title: res.statusCode + " Error",
@@ -15,46 +15,22 @@ const errorHandler = (err, req, res, next) => {
 
   switch (res.statusCode) {
     case HTTP_CONSTANTS.BAD_REQUEST:
-      error = {
-        title: res.statusCode + " Bad Request",
-        message: err.message,
-        stackTrace: err.stack,
-      };
+      error.title = res.statusCode + " Bad Request";
       logger.info(error);
     case HTTP_CONSTANTS.NOT_FOUND:
-      error = {
-        title: res.statusCode + " Not Found",
-        message: err.message,
-        stackTrace: err.stack,
-      };
+      error.title = res.statusCode + " Not Found";
       logger.info(error);
     case HTTP_CONSTANTS.UNAUTHORIZED:
-      error = {
-        title: res.statusCode + " Unauthorized",
-        message: err.message,
-        stackTrace: err.stack,
-      };
+      error.title = res.statusCode + " Unauthorized";
       logger.info(error);
     case HTTP_CONSTANTS.FORBIDDEN:
-      error = {
-        title: res.statusCode + " Forbidden",
-        message: err.message,
-        stackTrace: err.stack,
-      };
+      error.title = res.statusCode + " Forbidden";
       logger.info(error);
     case HTTP_CONSTANTS.SERVER_ERROR:
-      error = {
-        title: res.statusCode + " Server Error",
-        message: err.message,
-        stackTrace: err.stack,
-      };
+      error.title = res.statusCode + " Server Error";
       logger.info(error);
     case HTTP_CONSTANTS.CONFLICT:
-      error = {
-        title: res.statusCode + " Conflict",
-        message: err.message,
-        stackTrace: err.stack,
-      };
+      error.title = res.statusCode + " Conflict";
       logger.info(error);
     default:
       logger.error(error);
