@@ -29,7 +29,7 @@ const getUserById = asyncHandler(async (req, res) => {
     const user = await User.findOne({ _id: id });
     if (!user) {
         res.status(404)
-        throw Error("Unable to find user.")
+        throw new Error("Unable to find user.")
     }
     
     res.status(200).json(user);
@@ -67,9 +67,9 @@ const createUser = asyncHandler(async (req, res) => {
         console.log(`User created ${user}`);
         res.status(201).json({ _id: user.id, email: user.email });
       } catch (err) {
-        console.log(err);
         res.status(500);
-        throw new Error("Failed to create user.");
+        err.message = "Failed to create user: " + err.message;
+        throw err;
       }
   });
 
@@ -81,7 +81,7 @@ const patchUserById = asyncHandler(async (req, res) => {
     let user = await User.findById(req.params.id);
     if (!user) {
         res.status(404)
-        throw Error("Unable to find user.")
+        throw new Error("Unable to find user.")
     }
 
     const allowedFields = getSchemaKeysExcept(User, ["isIncomplete", "token"])

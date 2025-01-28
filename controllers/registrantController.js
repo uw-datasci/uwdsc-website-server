@@ -90,6 +90,7 @@ const attachRegistrantById = asyncHandler(async (req, res) => {
   const additionalFieldsSchema = event.additionalFieldsSchema;
   additionalFieldsSchema.forEach((value, key) => {
     if (!req.body.additionalFields.hasOwnProperty(key)) {
+      res.status(400);
       throw new Error(`Missing required field ${key}.`);
     }
   });
@@ -137,15 +138,15 @@ const checkInRegistrantById = asyncHandler(async (req, res) => {
         registrant.user = user
         return res.status(200).json({registrant})
       } else {
-        res.status(500)
+        res.status(409)
         throw new Error("Registrant is already checked in")
       }
     } else {
-      res.status(500)
+      res.status(401)
       throw new Error("Hash does not match")
     }
   } else {
-    res.status(404)
+    res.status(400)
     throw new Error("Event id is not valid or user is not registered")
   }
 

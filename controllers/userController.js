@@ -165,9 +165,9 @@ const sendVerificationEmail = asyncHandler(async (req, res) => {
     emailHtml = emailHtml.replace("<custom-email>", email);
     console.log("Email generated.")
   } catch (err) {
-    console.error("Error reading file:", err);
     res.status(500);
-    throw new Error("Failed to read verfication email HTML.");
+    err.message = "Failed to read verfication email HTML: " + err.message;
+    throw err;
   }
 
   console.log("Sending verification email...")
@@ -193,9 +193,9 @@ const sendVerificationEmail = asyncHandler(async (req, res) => {
       res.status(200).json({ message: "Verification email sent" });
     })
     .catch((err) => {
-      console.error(err);
       res.status(500);
-      throw new Error("Verification email was not able to be sent.");
+      err.message = "Verification email was not able to be sent: " + err.message;
+      throw err;
     });
 });
 
@@ -208,7 +208,7 @@ const sendForgotPasswordEmail = asyncHandler(async (req, res) => {
   let user = await User.findOne({ email: email });
   if (!user) {
     res.status(404)
-    throw Error("Unable to find user.")
+    throw new Error("Unable to find user.")
   }
 
   console.log("Generating forgot password token...")
@@ -237,9 +237,9 @@ const sendForgotPasswordEmail = asyncHandler(async (req, res) => {
     emailHtml = emailHtml.replace("<custom-email>", email);
     console.log("Forgot password email generated.")
   } catch (err) {
-    console.error("Error reading file:", err);
     res.status(500);
-    throw new Error("Failed to read forgot password email HTML.");
+    err.message = "Failed to read forgot password email HTML: " + err.message;
+    throw err;
   }
 
   console.log("Sending forgot password email...");
@@ -265,9 +265,9 @@ const sendForgotPasswordEmail = asyncHandler(async (req, res) => {
       res.status(200).json({ message: "Forgot password email sent" });
     })
     .catch((err) => {
-      console.error(err);
       res.status(500);
-      throw new Error("Forgot password email was not able to be sent");
+      err.message = "Forgot password email was not able to be sent: " + err.message;
+      throw err;
     });
 });
 
@@ -341,7 +341,7 @@ const verifyUser = asyncHandler(async (req, res) => {
     console.log("User verified.")
     res.status(200).json({ message: "Verified the user" });
   } else {
-    res.status(400);
+    res.status(401);
     throw new Error("Token hash does not match or has expired.");
   }
 });
@@ -373,7 +373,7 @@ const resetPassword = asyncHandler(async (req, res) => {
     );
     res.status(200).json({ message: "Password reseted." });
   } else {
-    res.status(400);
+    res.status(401);
     throw new Error("Token hash does not match or has expired.");
   }
 });

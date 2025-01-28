@@ -53,7 +53,7 @@ const getEventById = asyncHandler(async (req, res) => {
   const event = (await Event.findOne({ _id: id })).toJSON();
   if (!event) {
     res.status(404);
-    throw Error("Unable to find event.");
+    throw new Error("Unable to find event.");
   }
 
   delete event.secretName
@@ -121,7 +121,7 @@ const patchEventById = asyncHandler(async (req, res) => {
   const event = await Event.findById(id);
   if (!event) {
     res.status(404);
-    throw Error("Unable to find event.");
+    throw new Error("Unable to find event.");
   }
 
   const allowedKeys = Object.keys(Event.schema.obj);
