@@ -1,52 +1,66 @@
 const { HTTP_CONSTANTS } = require("../constants");
 const asyncHandler = require("express-async-handler");
+const pino = require('pino');
+const logger = pino();
 
 const errorHandler = (err, req, res, next) => {
-  const statusCode = res.statusCode ? res.statusCode : 500;
-  switch (statusCode) {
-    case HTTP_CONSTANTS.BAD_REQUEST:
-      res.json({
-        title: "Bad Request",
-        message: err.message,
-        stackTrace: err.stack,
-      });
-    case HTTP_CONSTANTS.NOT_FOUND:
-      res.json({
-        title: "Not Found",
-        message: err.message,
-        stackTrace: err.stack,
-      });
-    case HTTP_CONSTANTS.UNAUTHORIZED:
-      res.json({
-        title: "Unauthorized",
-        message: err.message,
-        stackTrace: err.stack,
-      });
-    case HTTP_CONSTANTS.FORBIDDEN:
-      res.json({
-        title: "Forbidden",
-        message: err.message,
-        stackTrace: err.stack,
-      });
-    case HTTP_CONSTANTS.SERVER_ERROR:
-      res.json({
-        title: "Server Error",
-        message: err.message,
-        stackTrace: err.stack,
-      });
-    case HTTP_CONSTANTS.CONFLICT:
-      res.json({
-        title: "Conflict",
-        message: err.message,
-        stackTrace: err.stack,
-      });
-    default:
-      res.status(500).json({
-        title: "Error",
-        message: err.message,
-        stackTrace: err.stack,
-      });
+  if (!res.statusCode) {
+    res.status(500);
   }
+  const error = {
+    title: res.statusCode + " Error",
+    message: err.message,
+    stackTrace: err.stack,
+  };
+
+  switch (res.statusCode) {
+    case HTTP_CONSTANTS.BAD_REQUEST:
+      error = {
+        title: res.statusCode + " Bad Request",
+        message: err.message,
+        stackTrace: err.stack,
+      };
+      logger.info(error);
+    case HTTP_CONSTANTS.NOT_FOUND:
+      error = {
+        title: res.statusCode + " Not Found",
+        message: err.message,
+        stackTrace: err.stack,
+      };
+      logger.info(error);
+    case HTTP_CONSTANTS.UNAUTHORIZED:
+      error = {
+        title: res.statusCode + " Unauthorized",
+        message: err.message,
+        stackTrace: err.stack,
+      };
+      logger.info(error);
+    case HTTP_CONSTANTS.FORBIDDEN:
+      error = {
+        title: res.statusCode + " Forbidden",
+        message: err.message,
+        stackTrace: err.stack,
+      };
+      logger.info(error);
+    case HTTP_CONSTANTS.SERVER_ERROR:
+      error = {
+        title: res.statusCode + " Server Error",
+        message: err.message,
+        stackTrace: err.stack,
+      };
+      logger.info(error);
+    case HTTP_CONSTANTS.CONFLICT:
+      error = {
+        title: res.statusCode + " Conflict",
+        message: err.message,
+        stackTrace: err.stack,
+      };
+      logger.info(error);
+    default:
+      logger.error(error);
+  }
+
+  res.json(error);
 };
 
 const requiresAll = (paramArr) => {
