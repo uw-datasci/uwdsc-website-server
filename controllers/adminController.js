@@ -137,7 +137,8 @@ const checkInById = asyncHandler(async (req, res) => {
             { isCheckedIn: true });
         res.status(200).json({ message: "User checked in!"});
     } else {
-        res.status(401).json({ message: "Event hash does not match"});
+        res.status(401);
+        throw new Error("Event hash does not match");
     }
 });
 
