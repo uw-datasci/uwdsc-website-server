@@ -1,7 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const { default: mongoose } = require("mongoose");
 const Event = mongoose.model("events");
-const { v4: uuidv4 } = require("uuid");
 
 //@desc Get all events 
 //@route GET /api/admin/events
@@ -33,6 +32,17 @@ const getAllEvents = asyncHandler(async (req, res) => {
       const eventObject = event.toJSON();
       delete eventObject.registrants;
       delete eventObject.secretName;
+
+      if (eventObject.subEvents) {
+        eventObject.subEvents = eventObject.subEvents.filter(subEvent => {
+          const now = new Date();
+          return (new Date(subEvent.startTime) <= now && new Date(subEvent.endTime) >= now)
+        }).map(subEvent => {
+          delete subEvent.checkedIn;
+  
+          return subEvent;
+        })
+      }
 
       return eventObject;
     });

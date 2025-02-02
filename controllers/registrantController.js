@@ -1,6 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const { default: mongoose } = require("mongoose");
 const bcrypt = require("bcrypt");
+const { checkInById } = require("./adminController");
 const User = mongoose.model("users");
 const Event = mongoose.model("events");
 
@@ -38,7 +39,8 @@ const getRegistrantById = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("Event not found.");
   }
-  const registrant = event.registrants.find(
+
+  let registrant = event.registrants.find(
     (r) => {
       return r.user?._id.toString() === userId
     }
@@ -50,7 +52,16 @@ const getRegistrantById = asyncHandler(async (req, res) => {
     );
   }
 
-  return res.status(200).json({ registrant });
+  let subEventsCheckedIn = []
+  if (event.subEvents?.length > 0) {
+    subEventsCheckedIn = event.subEvents.filter((subEvent) => {
+      return subEvent.checkedIn?.includes(userId)
+    }).map((subEvent) => {
+      return subEvent._id.toString()
+    })
+  }
+
+  return res.status(200).json({ registrant, subEventsCheckedIn });
 });
 
 //@desc Add registrant by ID
@@ -105,7 +116,7 @@ const attachRegistrantById = asyncHandler(async (req, res) => {
   );
 
   const addedRegistrant = updatedEvent.registrants.find(
-    (r) => r.user.toString() === userId
+    (r) => r.user?._id.toString() === userId
   );
 
   return res.status(200).json({ registrant: addedRegistrant });
@@ -147,6 +158,49 @@ const checkInRegistrantById = asyncHandler(async (req, res) => {
   } else {
     res.status(404)
     throw new Error("Event id is not valid or user is not registered")
+  }
+
+})
+
+const checkInRegistrantToSubEventById = asyncHandler(async (req, res) => {
+  const {user_id, event_id, sub_event_id} = req.params;
+  const userSecret = req.body.eventSecret;
+  const event = await Event.findOne({ _id: event_id });
+  const eventSecret = user_id + process.env.ACCESS_TOKEN_SECRET + event.secretName;
+  const registrantIndex = event.registrants.findIndex(
+    (r) => r.user.toString() === user_id
+  );
+  const registrant = event.registrants[registrantIndex];
+  const subEventIndex = await event.subEvents.findIndex(
+    (r) => r._id.toString() === sub_event_id
+  );
+  const subEvent = event.subEvents[subEventIndex];
+
+  console.log(subEventIndex);
+
+  if (event && registrant && subEvent) {
+    if (await bcrypt.compare(eventSecret, userSecret)){
+      if (!subEvent.checkedIn.includes(user_id)) {
+        registrant.checkedIn = true;
+        await Event.findOneAndUpdate(
+          { _id: event_id }, 
+          { $push: { [`subEvents.${subEventIndex}.checkedIn`]: user_id } }
+        )
+        
+        const user = await User.findOne({_id: registrant.user});
+        registrant.user = user
+        return res.status(200).json({registrant})
+      } else {
+        res.status(500)
+        throw new Error("Registrant is already checked in")
+      }
+    } else {
+      res.status(500)
+      throw new Error("Hash does not match")
+    }
+  } else {
+    res.status(404)
+    throw new Error("User, Event, or Sub Event id is not valid")
   }
 
 })
@@ -217,6 +271,7 @@ module.exports = {
   getRegistrantById,
   attachRegistrantById,
   checkInRegistrantById,
+  checkInRegistrantToSubEventById,
   patchRegistrantById,
   deleteRegistrantById,
 };

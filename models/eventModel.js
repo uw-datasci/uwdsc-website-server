@@ -178,7 +178,6 @@ const eventSchema = mongoose.Schema(
     subEvents: {
       type: [
         {
-          _id: false,
           name: {
             type: String,
             required: true
@@ -345,7 +344,7 @@ eventSchema.query.allEvents = function () {
 }
 
 eventSchema.virtual("registrantCount").get(function () {
-  if (this.registrant) {
+  if (this.registrants) {
     return this.registrants.length;
   } else {
     return 0;

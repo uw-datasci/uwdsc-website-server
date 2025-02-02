@@ -16,6 +16,10 @@ const {
   deleteEventById,
 } = require("../controllers/eventController");
 
+const {
+  createSubEvent
+} = require("../controllers/subEventController");
+
 const { requiresAll } = require("../middleware/errorHandler");
 const { validateAdmin } = require("../middleware/validateTokenHandler");
 
@@ -46,5 +50,7 @@ router.post("/events", createEvent);
 router.patch("/events/:id", patchEventById);
 
 router.delete("/events/:id", deleteEventById);
+
+router.post("/events/:event_id/subevents", createSubEvent);
 
 module.exports = router;
