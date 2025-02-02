@@ -173,6 +173,48 @@ const eventSchema = mongoose.Schema(
       ],
       required: true,
       default: []
+    },
+
+    subEvents: {
+      type: [
+        {
+          _id: false,
+          name: {
+            type: String,
+            required: true
+          },
+          description: {
+            type: String,
+            required: true
+          },
+          location: {
+            type: String,
+            required: true
+          },
+          startTime: {
+            type: Date,
+            required: true
+          },
+          bufferedStartTime: {
+            type: Date,
+            required: true
+          },
+          endTime: {
+            type: Date,
+            required: true
+          },
+          bufferedEndTime: {
+            type: Date,
+            required: true
+          },
+          checkedIn: {
+            type: [mongoose.Schema.Types.ObjectId],
+            ref: "users",
+            required: true
+          }
+        }
+      ],
+      default: []
     }
   },
   {
@@ -251,7 +293,10 @@ eventSchema.pre("validate", function (next) {
     throw next(new Error("bufferedEndTime must be after endTime"));
   }
 
-  
+  if (!this.isRegistrationRequired && this.subEvents.length > 0) {
+    throw next(new Error("Only events that require registration can have sub-events!"));
+  }
+
   next();
 });
 
