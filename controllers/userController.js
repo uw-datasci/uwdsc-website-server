@@ -301,16 +301,17 @@ const getQr = asyncHandler(async (req, res) => {
   
   events = await Promise.all(
     events.map(async (event) => {
+      console.log(id)
+      console.log(process.env.ACCESS_TOKEN_SECRET)
+      console.log(event.secretName)
       return {
         id: event._id,
         secret: await bcrypt.hash(id + process.env.ACCESS_TOKEN_SECRET + event.secretName, 10)
       }
     })
   );
-
-  console.log(events)
-  console.log(new Date())
-
+  
+  
   res.status(200).json({ id: id, eventArray: events });
 });
 

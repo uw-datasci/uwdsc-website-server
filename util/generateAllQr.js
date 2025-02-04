@@ -41,12 +41,16 @@ function splitTextIntoLines(text, font, fontSize, maxWidth) {
     } else {
       currentLine = testLine;
     }
+
+    while(currentLine && font.widthOfTextAtSize(currentLine, fontSize) > maxWidth) {
+      fontSize--;
+    }
   }
   // Push any remaining text as the last line
   if (currentLine) {
     lines.push(currentLine);
   }
-  return lines;
+  return {lines, fontSize};
 }
 
 // Main function that generates the PDF
@@ -162,12 +166,13 @@ async function createPdfWithQRCodes(dataList) {
     const nameXPos = positionXPos;
     let nameYPos = positionYPos - 17;
     const nameFontSize = 15;
-    const lines = splitTextIntoLines(name, textFont, nameFontSize, 120);
+    const nameFormat = splitTextIntoLines(name, textFont, nameFontSize, 120);
+    const lines = nameFormat.lines
     lines.forEach((line) => {
       page.drawText(line, {
-        x: nameXPos - ( textFont.widthOfTextAtSize(line, nameFontSize) / 2 ),
+        x: nameXPos - ( textFont.widthOfTextAtSize(line, nameFormat.fontSize) / 2 ),
         y: nameYPos,
-        size: nameFontSize,
+        size: nameFormat.fontSize,
         font: textFont,
         color: rgb(1, 1, 1),
       });
@@ -187,7 +192,7 @@ async function main() {
     await connectDb();
 
     // TARGET EVENT
-    const event_id = "6787155662af0eaf6df647c1";
+    const event_id = "67892e1eb18a5ecba55e17f7";
 
     // 1) Get target event
     const event = await Event.findOne({ _id: event_id}).populate(
@@ -195,22 +200,31 @@ async function main() {
     );
     
     // 2) Generate QR for selected registrants
-    const QRs = await Promise.all(event.registrants.filter(
+    const QRs = (await Promise.all(event.registrants.filter(
       registrant => registrant.selected
     ).map(
       async (registrant) => {
         return { 
           id: registrant.user._id.toString(),
           name: registrant.user.username.toString(),
-          // name: "Chow Sheng Liang AJ",
           eventArray: [
             {
               id: event._id.toString(),
-              secret: await bcrypt.hash(registrant.user + process.env.ACCESS_TOKEN_SECRET + event.secretName, 10)
+              secret: await bcrypt.hash(registrant.user._id.toString() + process.env.ACCESS_TOKEN_SECRET + event.secretName, 10)
             }
           ] 
         }
-    }));
+    }))).sort(
+      (a,b) => {
+        if (a.name > b.name) {
+          return 1;
+        } else if (a.name < b.name) {
+          return -1;
+        } else {
+          return 0;
+        }
+      }
+    );
 
     // 3) Create PDF
     createPdfWithQRCodes(QRs)
