@@ -9,3 +9,8 @@ node_modules/
 #DB migration ignores
 *.csv
 util/importErrors/
+
+#QR generation ignores
+*.pdf
+*.otf
+*.svg
