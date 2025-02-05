@@ -9,7 +9,9 @@ const createSubEvent = asyncHandler(async (req, res) => {
     description,
     location,
     startTime,
+    bufferedStartTime,
     endTime,
+    bufferedEndTime,
   } = req.body;
 
   try {
@@ -19,7 +21,9 @@ const createSubEvent = asyncHandler(async (req, res) => {
       description,
       location,
       startTime: new Date(startTime),
-      endTime: new Date(endTime)
+      bufferedStartTime: new Date(bufferedStartTime),
+      endTime: new Date(endTime),
+      bufferedEndTime: new Date(bufferedEndTime)
     };
 
     // Create the event

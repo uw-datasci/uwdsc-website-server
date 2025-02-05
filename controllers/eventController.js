@@ -36,7 +36,7 @@ const getAllEvents = asyncHandler(async (req, res) => {
       if (eventObject.subEvents) {
         eventObject.subEvents = eventObject.subEvents.filter(subEvent => {
           const now = new Date();
-          return (new Date(subEvent.startTime) <= now && new Date(subEvent.endTime) >= now)
+          return (new Date(subEvent.bufferedStartTime) <= now && new Date(subEvent.bufferedEndTime) >= now)
         }).map(subEvent => {
           delete subEvent.checkedIn;
   
@@ -105,12 +105,12 @@ const createEvent = asyncHandler(async (req, res) => {
 
     // Only set bufferedStartDate if bufferedStartTime was given
     if (bufferedStartTime) {
-      newEventData.bufferedStartDate = new Date(bufferedStartTime);
+      newEventData.bufferedStartTime = new Date(bufferedStartTime);
     }
 
-    // Only set bufferedEndDate if bufferedEndTime was given
+    // Only set bufferedEndTime if bufferedEndTime was given
     if (bufferedEndTime) {
-      newEventData.bufferedEndDate = new Date(bufferedEndTime);
+      newEventData.bufferedEndTime = new Date(bufferedEndTime);
     }
 
     // Create the event
