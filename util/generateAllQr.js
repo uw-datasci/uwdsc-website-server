@@ -206,7 +206,7 @@ async function main() {
       async (registrant) => {
         return { 
           id: registrant.user._id.toString(),
-          name: registrant.user.username.toString(),
+          name: registrant.user.username.toString().replace(",",""),
           eventArray: [
             {
               id: event._id.toString(),
