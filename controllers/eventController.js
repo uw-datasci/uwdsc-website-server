@@ -2,7 +2,7 @@ const asyncHandler = require("express-async-handler");
 const { default: mongoose } = require("mongoose");
 const Event = mongoose.model("events");
 
-//@desc Get all events 
+//@desc Get all events
 //@route GET /api/admin/events
 //@access private
 const getAllEvents = asyncHandler(async (req, res) => {
@@ -12,7 +12,11 @@ const getAllEvents = asyncHandler(async (req, res) => {
 
   let events = [];
   try {
-    if (fromDateObj && upToDateObj && fromDateObj.getTime() !== upToDateObj.getTime()) {
+    if (
+      fromDateObj &&
+      upToDateObj &&
+      fromDateObj.getTime() !== upToDateObj.getTime()
+    ) {
       events = await Event.find().byDateRange(fromDateObj, upToDateObj);
     } else if (fromDateObj && upToDateObj) {
       if (buffered) {
@@ -28,27 +32,31 @@ const getAllEvents = asyncHandler(async (req, res) => {
       events = await Event.find().allEvents();
     }
 
-    events = events.map(event => {
+    events = events.map((event) => {
       const eventObject = event.toJSON();
       delete eventObject.registrants;
       delete eventObject.secretName;
 
       if (eventObject.subEvents) {
-        eventObject.subEvents = eventObject.subEvents.filter(subEvent => {
-          const now = new Date();
-          return (new Date(subEvent.bufferedStartTime) <= now && new Date(subEvent.bufferedEndTime) >= now)
-        }).map(subEvent => {
-          delete subEvent.checkedIn;
-  
-          return subEvent;
-        })
+        eventObject.subEvents = eventObject.subEvents
+          .filter((subEvent) => {
+            const now = new Date();
+            return (
+              new Date(subEvent.bufferedStartTime) <= now &&
+              new Date(subEvent.bufferedEndTime) >= now
+            );
+          })
+          .map((subEvent) => {
+            delete subEvent.checkedIn;
+
+            return subEvent;
+          });
       }
 
       return eventObject;
     });
 
     res.status(200).json(events);
-
   } catch (error) {
     console.error(error);
     throw err;
@@ -66,7 +74,7 @@ const getEventById = asyncHandler(async (req, res) => {
     throw Error("Unable to find event.");
   }
 
-  delete event.secretName
+  delete event.secretName;
 
   res.status(200).json(event);
 });
@@ -86,7 +94,7 @@ const createEvent = asyncHandler(async (req, res) => {
     bufferedEndTime,
     requirements,
     toDisplay,
-    additionalFieldsSchema
+    additionalFieldsSchema,
   } = req.body;
 
   try {
@@ -100,7 +108,7 @@ const createEvent = asyncHandler(async (req, res) => {
       endTime: new Date(endTime),
       requirements,
       toDisplay,
-      additionalFieldsSchema
+      additionalFieldsSchema,
     };
 
     // Only set bufferedStartDate if bufferedStartTime was given
@@ -115,18 +123,22 @@ const createEvent = asyncHandler(async (req, res) => {
 
     // Create the event
     const event = await Event.create(newEventData);
-    res.status(201).json({ _id: event.id });
+    res.status(201).json({
+      message: "Event created successfully",
+      eventId: event._id,
+    });
   } catch (err) {
     console.error(err);
     throw err;
   }
 });
+
 //@desc Update an existing event
 //@route PATCH /api/admin/events/:id
 //@access private
 const patchEventById = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { ...fieldsToUpdate }  = req.body;
+  const { ...fieldsToUpdate } = req.body;
 
   const event = await Event.findById(id);
   if (!event) {
@@ -135,12 +147,14 @@ const patchEventById = asyncHandler(async (req, res) => {
   }
 
   const allowedKeys = Object.keys(Event.schema.obj);
-  const validFields = allowedKeys.filter(key => key !== "registrants");
+  const validFields = allowedKeys.filter((key) => key !== "registrants");
   const updatedFields = Object.fromEntries(
-    Object.entries(fieldsToUpdate).filter(([ key ]) => validFields.includes(key))
+    Object.entries(fieldsToUpdate).filter(([key]) => validFields.includes(key))
   );
 
-  const updatedEvent = await Event.findByIdAndUpdate(id, updatedFields, { returnDocument: 'after' });
+  const updatedEvent = await Event.findByIdAndUpdate(id, updatedFields, {
+    returnDocument: "after",
+  });
   const eventObject = updatedEvent.toJSON();
   delete eventObject.registrants;
 
@@ -157,4 +171,10 @@ const deleteEventById = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "Event deleted successfully" });
 });
 
-module.exports = { getAllEvents, getEventById, createEvent, patchEventById, deleteEventById };
+module.exports = {
+  getAllEvents,
+  getEventById,
+  createEvent,
+  patchEventById,
+  deleteEventById,
+};
