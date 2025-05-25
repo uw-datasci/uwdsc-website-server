@@ -11,7 +11,7 @@ const {
 
 const router = express.Router({ mergeParams: true });
 
-const { validateUser } = require("../middleware/authMiddleware");
+const { validateUser } = require("../middleware/validateTokenHandler");
 
 router.get("/", getAllRegistrants);
 
