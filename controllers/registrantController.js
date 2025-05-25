@@ -142,6 +142,7 @@ const checkInRegistrantById = asyncHandler(async (req, res) => {
   const registrant = event.registrants[registrantIndex];
 
   if (event && registrant) {
+    console.log(registrant)
     // if (await bcrypt.compare(eventSecret, userSecret)){
       if (!registrant.checkedIn) {
         registrant.checkedIn = true;
@@ -154,8 +155,8 @@ const checkInRegistrantById = asyncHandler(async (req, res) => {
         registrant.user = user
         return res.status(200).json({registrant})
       } else {
-        res.status(500)
-        throw new Error("Registrant is already checked in")
+        // res.status(500)
+        // throw new Error("Registrant is already checked in")
       }
     // } else {
     //   res.status(500)
