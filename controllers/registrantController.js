@@ -127,22 +127,16 @@ const attachRegistrantById = asyncHandler(async (req, res) => {
 //@access Private
 const checkInRegistrantById = asyncHandler(async (req, res) => {
   const {event_id, user_id} = req.params;
-
-  if (req.user.id !== user_id) {
-    res.status(403);
-    throw new Error("You are not authorized to check in another user.");
-  }
-  
-  // const userSecret = req.body.eventSecret;
+  const userSecret = req.body.eventSecret;
   const event = await Event.findOne({ _id: event_id });
-  // const eventSecret = user_id + process.env.ACCESS_TOKEN_SECRET + event.secretName;
+  const eventSecret = user_id + process.env.ACCESS_TOKEN_SECRET + event.secretName;
   const registrantIndex = event.registrants.findIndex(
     (r) => r.user.toString() === user_id
   );
   const registrant = event.registrants[registrantIndex];
 
   if (event && registrant) {
-    // if (await bcrypt.compare(eventSecret, userSecret)){
+    if (await bcrypt.compare(eventSecret, userSecret)){
       if (!registrant.checkedIn) {
         registrant.checkedIn = true;
         await Event.findOneAndUpdate(
@@ -157,10 +151,10 @@ const checkInRegistrantById = asyncHandler(async (req, res) => {
         res.status(500)
         throw new Error("Registrant is already checked in")
       }
-    // } else {
-    //   res.status(500)
-    //   throw new Error("Hash does not match")
-    // }
+    } else {
+      res.status(500)
+      throw new Error("Hash does not match")
+    }
   } else {
     res.status(404)
     throw new Error("Event id is not valid or user is not registered")
