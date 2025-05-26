@@ -8,6 +8,8 @@ const {
   sendForgotPasswordEmail,
   resetPassword,
   getQr,
+  checkUserHasPaid,
+  backfillUserEvents,
 } = require("../controllers/userController");
 const { requiresAll } = require("../middleware/errorHandler")
 const { validateUser } = require("../middleware/validateTokenHandler");
@@ -59,5 +61,9 @@ router.get("/events/:event_id/registrants", validateUser, getRegistrantById);
 router.post("/events/:event_id/registrants", validateUser, attachRegistrantById);
 
 router.patch("/events/:event_id/registrants", validateUser, patchRegistrantById);
+
+router.get("/hasPaid/:user_id", checkUserHasPaid);
+
+router.post("/backfillAll/:user_id", backfillUserEvents);
 
 module.exports = router;
