@@ -157,4 +157,25 @@ const deleteEventById = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "Event deleted successfully" });
 });
 
-module.exports = { getAllEvents, getEventById, createEvent, patchEventById, deleteEventById };
+//@desc Get the earliest event starting today
+//@route GET /api/events/latest
+//@access Private
+const getLatestEvent = asyncHandler(async (req, res) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const latestEvent = await Event.findOne({
+    startTime: { $gte: today } // today
+  })
+    .sort({ startTime: 1 }) 
+    .populate("registrants.user");
+
+  // if (!latestEvent) {
+  //   res.status(404);
+  //   throw new Error("No upcoming events found.");
+  // }
+
+  return res.status(200).json({ event: latestEvent });
+});
+
+module.exports = { getAllEvents, getEventById, createEvent, patchEventById, deleteEventById, getLatestEvent };
