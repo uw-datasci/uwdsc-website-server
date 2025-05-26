@@ -11,13 +11,11 @@ const {
 
 const router = express.Router({ mergeParams: true });
 
-const { validateUser } = require("../middleware/authMiddleware");
-
 router.get("/", getAllRegistrants);
 
 router.get("/:user_id", getRegistrantById);
 router.post("/", attachRegistrantById);
-router.patch("/checkin/:user_id", validateUser, checkInRegistrantById);
+router.patch("/checkin/:user_id", checkInRegistrantById);
 router.patch("/subevents/:sub_event_id/checkin/:user_id", checkInRegistrantToSubEventById);
 router.patch("/:user_id", patchRegistrantById);
 router.delete("/:user_id", deleteRegistrantById);
