@@ -162,17 +162,18 @@ const deleteEventById = asyncHandler(async (req, res) => {
 //@access Private
 const getLatestEvent = asyncHandler(async (req, res) => {
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   const latestEvent = await Event.findOne({
-    startTime: { $gte: '2025-01-30' } // today
+    startTime: { $gte: today } // today
   })
     .sort({ startTime: 1 })  
     .populate("registrants.user");
 
-  if (!latestEvent) {
-    res.status(404);
-    throw new Error("No upcoming events found.");
-  }
+  // if (!latestEvent) {
+  //   res.status(404);
+  //   throw new Error("No upcoming events found.");
+  // }
 
   return res.status(200).json({ event: latestEvent });
 });
