@@ -167,7 +167,7 @@ const getLatestEvent = asyncHandler(async (req, res) => {
   const latestEvent = await Event.findOne({
     startTime: { $gte: today } // today
   })
-    .sort({ startTime: 1 })  
+    .sort({ startTime: 1 }) 
     .populate("registrants.user");
 
   // if (!latestEvent) {
