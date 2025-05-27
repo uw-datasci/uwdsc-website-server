@@ -1,6 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const { default: mongoose } = require("mongoose");
 const Event = mongoose.model("events");
+const User = mongoose.model("users");
 
 //@desc Get all events
 //@route GET /api/admin/events
@@ -98,6 +99,17 @@ const createEvent = asyncHandler(async (req, res) => {
   } = req.body;
 
   try {
+    // Get all current users
+    const users = await User.find({});
+    
+    // Create registrants array with all users
+    const registrants = users.map(user => ({
+      user: user._id,
+      hasPaid: true,
+      checkedIn: false,
+      selected: true
+    }));
+
     // Basic event data
     const newEventData = {
       name,
@@ -109,6 +121,7 @@ const createEvent = asyncHandler(async (req, res) => {
       requirements,
       toDisplay,
       additionalFieldsSchema,
+      registrants
     };
 
     // Only set bufferedStartDate if bufferedStartTime was given
@@ -121,13 +134,15 @@ const createEvent = asyncHandler(async (req, res) => {
       newEventData.bufferedEndTime = new Date(bufferedEndTime);
     }
 
+    console.log("New event data:", newEventData);
     // Create the event
     const event = await Event.create(newEventData);
     res.status(201).json({
       message: "Event created successfully",
       eventId: event._id,
     });
-  } catch (err) {
+  } 
+  catch (err) {
     console.error(err);
     throw err;
   }
@@ -175,32 +190,21 @@ const deleteEventById = asyncHandler(async (req, res) => {
 //@route GET /api/events/latest
 //@access public
 const getLatestEvent = asyncHandler(async (req, res) => {
-    // Get today's date at midnight
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    console.log("Searching for events after:", today);
-
-    // Find all events starting today or later, sorted by startTime
-    const events = await Event.find({
-        startTime: { $gte: today }
+    const now = new Date();
+    const currentEvent = await Event.find({
+        startTime: { $lte: now },
+        endTime: { $gte: now }
     })
-    .sort({ startTime: 1 })  // Sort by startTime ascending
-    .populate({
-        path: 'registrants.user',
-        select: 'username email watIAM faculty term'
-    });
+    .sort({ startTime: 1 })
+    .limit(1)
+    .populate("registrants.user");
 
-    if (!events || events.length === 0) {
+    if (!currentEvent || currentEvent.length === 0) {
         res.status(404);
-        throw new Error("No upcoming events found");
+        throw new Error("No current events found");
     }
 
-    // Take the first event (earliest upcoming event)
-    const latestEvent = events[0];
-    console.log("Found event:", latestEvent?._id);
-
-    res.status(200).json(latestEvent);
+    res.status(200).json(currentEvent[0]);
 });
 
 module.exports = { getAllEvents, getEventById, createEvent, patchEventById, deleteEventById, getLatestEvent };
