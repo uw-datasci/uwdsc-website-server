@@ -255,7 +255,7 @@ eventSchema.pre("validate", function (next) {
   ]) 
   this.requirements.set("user", new Map(Object.entries(this.requirements.get("user"))));
 
-  if (this.isNew && new Date() < this.startTime) {
+  if (this.isNew && this.startTime < new Date()) {
     next(new Error("Cannot create past events."));
   }
 

@@ -192,10 +192,10 @@ const deleteEventById = asyncHandler(async (req, res) => {
 const getLatestEvent = asyncHandler(async (req, res) => {
     const now = new Date();
     const currentEvent = await Event.find({
-        startTime: { $lte: now },
-        endTime: { $gte: now }
+        bufferedStartTime: { $lte: now },
+        bufferedEndTime: { $gte: now }
     })
-    .sort({ startTime: 1 })
+    .sort({ bufferedStartTime: 1 })
     .limit(1)
     .populate("registrants.user");
 
