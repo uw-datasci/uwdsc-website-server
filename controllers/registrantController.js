@@ -93,10 +93,12 @@ const attachRegistrantById = asyncHandler(async (req, res) => {
 
   console.log(registrant)
 
+  /*
   if (registrant) {
     res.status(400);
     throw new Error("Registrant already exists.");
   }
+  */
 
   const additionalFieldsSchema = event.additionalFieldsSchema;
   additionalFieldsSchema.forEach((value, key) => {
@@ -108,7 +110,7 @@ const attachRegistrantById = asyncHandler(async (req, res) => {
 
   await Event.updateOne(
     { _id: eventId },
-    { $push: { registrants: newRegistrant } }
+    { $addToSet: { registrants: newRegistrant } }
   )
 
   const updatedEvent = await Event.findOne({ _id: eventId }).populate(
@@ -128,6 +130,8 @@ const attachRegistrantById = asyncHandler(async (req, res) => {
 const checkInRegistrantById = asyncHandler(async (req, res) => {
   const {event_id, user_id} = req.params;
 
+  console.log("YESSSS")
+  console.log(req.user.id, user_id)
   if (req.user.id !== user_id) {
     res.status(403);
     throw new Error("You are not authorized to check in another user.");

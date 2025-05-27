@@ -1,6 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const { default: mongoose } = require("mongoose");
 const Event = mongoose.model("events");
+const User = mongoose.model("users");
 
 //@desc Get all events
 //@route GET /api/admin/events
@@ -98,6 +99,17 @@ const createEvent = asyncHandler(async (req, res) => {
   } = req.body;
 
   try {
+    // Get all current users
+    const users = await User.find({});
+    
+    // Create registrants array with all users
+    const registrants = users.map(user => ({
+      user: user._id,
+      hasPaid: true,
+      checkedIn: false,
+      selected: true
+    }));
+
     // Basic event data
     const newEventData = {
       name,
@@ -109,6 +121,7 @@ const createEvent = asyncHandler(async (req, res) => {
       requirements,
       toDisplay,
       additionalFieldsSchema,
+      registrants
     };
 
     // Only set bufferedStartDate if bufferedStartTime was given
@@ -121,13 +134,15 @@ const createEvent = asyncHandler(async (req, res) => {
       newEventData.bufferedEndTime = new Date(bufferedEndTime);
     }
 
+    console.log("New event data:", newEventData);
     // Create the event
     const event = await Event.create(newEventData);
     res.status(201).json({
       message: "Event created successfully",
       eventId: event._id,
     });
-  } catch (err) {
+  } 
+  catch (err) {
     console.error(err);
     throw err;
   }
@@ -171,25 +186,25 @@ const deleteEventById = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "Event deleted successfully" });
 });
 
-//@desc Get the earliest event starting today
+//@desc Get the latest event
 //@route GET /api/events/latest
-//@access Private
+//@access public
 const getLatestEvent = asyncHandler(async (req, res) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const latestEvent = await Event.findOne({
-    startTime: { $gte: today } // today
-  })
-    .sort({ startTime: 1 }) 
+    const now = new Date();
+    const currentEvent = await Event.find({
+        bufferedStartTime: { $lte: now },
+        bufferedEndTime: { $gte: now }
+    })
+    .sort({ bufferedStartTime: 1 })
+    .limit(1)
     .populate("registrants.user");
 
-  // if (!latestEvent) {
-  //   res.status(404);
-  //   throw new Error("No upcoming events found.");
-  // }
+    if (!currentEvent || currentEvent.length === 0) {
+        res.status(404);
+        throw new Error("No current events found");
+    }
 
-  return res.status(200).json({ event: latestEvent });
+    res.status(200).json(currentEvent[0]);
 });
 
 module.exports = { getAllEvents, getEventById, createEvent, patchEventById, deleteEventById, getLatestEvent };
