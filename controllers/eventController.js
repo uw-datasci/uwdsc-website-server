@@ -200,8 +200,7 @@ const getLatestEvent = asyncHandler(async (req, res) => {
     .populate("registrants.user");
 
     if (!currentEvent || currentEvent.length === 0) {
-        res.status(404);
-        throw new Error("No current events found");
+      return res.status(200).json(null);
     }
 
     res.status(200).json(currentEvent[0]);
