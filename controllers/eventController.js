@@ -121,6 +121,7 @@ const createEvent = asyncHandler(async (req, res) => {
     throw err;
   }
 });
+
 //@desc Update an existing event
 //@route PATCH /api/admin/events/:id
 //@access private
@@ -157,25 +158,36 @@ const deleteEventById = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "Event deleted successfully" });
 });
 
-//@desc Get the earliest event starting today
+//@desc Get the latest event
 //@route GET /api/events/latest
-//@access Private
+//@access public
 const getLatestEvent = asyncHandler(async (req, res) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+    // Get today's date at midnight
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-  const latestEvent = await Event.findOne({
-    startTime: { $gte: today } // today
-  })
-    .sort({ startTime: 1 }) 
-    .populate("registrants.user");
+    console.log("Searching for events after:", today);
 
-  // if (!latestEvent) {
-  //   res.status(404);
-  //   throw new Error("No upcoming events found.");
-  // }
+    // Find all events starting today or later, sorted by startTime
+    const events = await Event.find({
+        startTime: { $gte: today }
+    })
+    .sort({ startTime: 1 })  // Sort by startTime ascending
+    .populate({
+        path: 'registrants.user',
+        select: 'username email watIAM faculty term'
+    });
 
-  return res.status(200).json({ event: latestEvent });
+    if (!events || events.length === 0) {
+        res.status(404);
+        throw new Error("No upcoming events found");
+    }
+
+    // Take the first event (earliest upcoming event)
+    const latestEvent = events[0];
+    console.log("Found event:", latestEvent?._id);
+
+    res.status(200).json(latestEvent);
 });
 
 module.exports = { getAllEvents, getEventById, createEvent, patchEventById, deleteEventById, getLatestEvent };

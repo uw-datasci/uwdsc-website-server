@@ -470,6 +470,81 @@ const backfillUserEvents = asyncHandler(async (req, res) => {
     });
 });
 
+//@desc Remove user from all events from past week to latest
+//@route DELETE /api/users/removeFromEvents/:user_id
+//@access public
+const removeUserFromEvents = asyncHandler(async (req, res) => {
+    const user_id = req.params.user_id;
+    
+    // Find the user
+    const user = await User.findById(user_id);
+    if (!user) {
+        res.status(404);
+        throw new Error("User not found");
+    }
+
+    // Get date from a week ago
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    // Find the latest event
+    const latestEvent = await Event.findOne().sort({ startTime: -1 });
+    if (!latestEvent) {
+        res.status(404);
+        throw new Error("No events found in the system");
+    }
+
+    // Find all events from a week ago up to the latest event
+    const events = await Event.find({
+        startTime: { 
+            $gte: oneWeekAgo,
+            $lte: latestEvent.startTime
+        }
+    });
+
+    // Remove user from each event's registrants
+    const updatePromises = events.map(event => {
+        // Check if user is registered
+        const isRegistered = event.registrants && event.registrants.some(
+            reg => reg.user.toString() === user_id
+        );
+
+        if (isRegistered) {
+            return Event.findByIdAndUpdate(
+                event._id,
+                { 
+                    $pull: { 
+                        registrants: {
+                            user: user_id
+                        }
+                    }
+                }
+            );
+        }
+        return Promise.resolve(); // Skip if not registered
+    });
+
+    await Promise.all(updatePromises);
+
+    // Get updated events to return
+    const updatedEvents = await Event.find({
+        startTime: { 
+            $gte: oneWeekAgo,
+            $lte: latestEvent.startTime
+        }
+    });
+
+    res.status(200).json({ 
+        message: "Successfully removed user from events",
+        eventsRemoved: events.length,
+        events: updatedEvents.map(event => ({
+            id: event._id,
+            name: event.name,
+            startTime: event.startTime
+        }))
+    });
+});
+
 module.exports = {
   registerUser,
   sendVerificationEmail,
@@ -480,5 +555,6 @@ module.exports = {
   currentUser,
   getQr,
   checkUserHasPaid,
-  backfillUserEvents
+  backfillUserEvents,
+  removeUserFromEvents
 };
