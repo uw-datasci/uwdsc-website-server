@@ -195,7 +195,7 @@ const getLatestEvent = asyncHandler(async (req, res) => {
         bufferedStartTime: { $lte: now },
         bufferedEndTime: { $gte: now }
     })
-    .sort({ startTime: 1 })
+    .sort({ bufferedStartTime: 1 })
     .limit(1)
     .populate("registrants.user");
 
