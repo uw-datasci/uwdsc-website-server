@@ -69,6 +69,8 @@ const registerUser = asyncHandler(async (req, res) => {
       hash: token,
       expires: expiry,
     },
+    isMathSocMember: faculty === "Math",
+    eventList: [],
   });
 
   if (!user) {
