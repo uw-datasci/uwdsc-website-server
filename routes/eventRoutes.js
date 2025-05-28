@@ -4,6 +4,8 @@ const {
   getEventById,
   createEvent,
   getLatestEvent,
+  patchEventById,
+  deleteEventById,
 } = require("../controllers/eventController");
 const { checkInRegistrantById } = require("../controllers/registrantController");
 const { validateUser } = require("../middleware/validateTokenHandler");
@@ -15,5 +17,7 @@ router.post("/latest", getLatestEvent)
 router.get("/:event_id", getEventById)
 router.patch("/:event_id/registrants/checkin/:user_id", validateUser, checkInRegistrantById)
 router.post("/create", createEvent);
+router.patch("/:event_id", patchEventById);
+router.delete("/:event_id", deleteEventById);
 
 module.exports = router;
