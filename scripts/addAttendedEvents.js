@@ -26,12 +26,16 @@ async function run() {
     for (const event of allEvents) {
       if (!Array.isArray(event.registrants)) continue;
 
-      const registrantIds = event.registrants.map(r => r.user); 
+    const checkedInRegistrantIds = event.registrants
+      .filter(r => r.checkedIn === true)
+      .map(r => r.user);
 
+    if (checkedInRegistrantIds.length > 0) {
       await users.updateMany(
-        { _id: { $in: registrantIds } },
+        { _id: { $in: checkedInRegistrantIds } },
         { $addToSet: { eventList: event._id } } // $addToSet avoids duplicates
       );
+    }
     }
 
     console.log("Migration completed.");
