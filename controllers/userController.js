@@ -512,6 +512,12 @@ const removeUserFromEvents = asyncHandler(async (req, res) => {
         );
 
         if (isRegistered) {
+            User.findByIdAndUpdate(
+                user_id,
+                { $pull: { eventList: event._id } }
+            ).catch(err => {
+                console.error(`Failed to remove event from user ${user_id}:`, err);
+            });
             return Event.findByIdAndUpdate(
                 event._id,
                 { 

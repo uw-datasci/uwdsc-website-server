@@ -62,7 +62,9 @@ const createUser = asyncHandler(async (req, res) => {
             term: term,
             heardFromWhere: heardFromWhere,
             memberIdeas: memberIdeas,
-            userStatus: userStatus || 'member'
+            userStatus: userStatus || 'member',
+            isMathSocMember: faculty === "Math",
+            eventList: [],
         });
         console.log(`User created ${user}`);
         res.status(201).json({ _id: user.id, email: user.email });
@@ -134,7 +136,8 @@ const checkInById = asyncHandler(async (req, res) => {
     if (await bcrypt.compare(event.eventName, eventName)) {
         await User.findOneAndUpdate(
             { _id: id }, 
-            { isCheckedIn: true });
+            { isCheckedIn: true, $addToSet: { eventList: event._id } });
+            
         res.status(200).json({ message: "User checked in!"});
     } else {
         res.status(401).json({ message: "Event hash does not match"});
