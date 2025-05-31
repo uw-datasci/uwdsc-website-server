@@ -97,7 +97,17 @@ const userSchema = mongoose.Schema(
                 type: Number,
                 default: -1
             },
-        }
+        },
+        isMathSocMember: {
+            type: Boolean,
+            required: [true, "Please add whether the user is a MathSoc member or not"],
+            default: false
+        },
+        eventList: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "events",
+            default: []
+        }],
     },
     {
         timestamps: true,

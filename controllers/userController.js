@@ -69,6 +69,8 @@ const registerUser = asyncHandler(async (req, res) => {
       hash: token,
       expires: expiry,
     },
+    isMathSocMember: faculty === "Math",
+    eventList: [],
   });
 
   if (!user) {
@@ -510,6 +512,12 @@ const removeUserFromEvents = asyncHandler(async (req, res) => {
         );
 
         if (isRegistered) {
+            User.findByIdAndUpdate(
+                user_id,
+                { $pull: { eventList: event._id } }
+            ).catch(err => {
+                console.error(`Failed to remove event from user ${user_id}:`, err);
+            });
             return Event.findByIdAndUpdate(
                 event._id,
                 { 
