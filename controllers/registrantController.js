@@ -157,6 +157,10 @@ const checkInRegistrantById = asyncHandler(async (req, res) => {
         
         const user = await User.findOne({_id: registrant.user});
         registrant.user = user
+        await User.findOneAndUpdate(
+          { _id: registrant.user._id },
+          { $addToSet: { eventList: event_id } }
+        );
         return res.status(200).json({registrant})
       } else {
         // res.status(500)
