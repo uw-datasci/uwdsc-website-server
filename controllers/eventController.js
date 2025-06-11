@@ -211,4 +211,18 @@ const getLatestEvent = asyncHandler(async (req, res) => {
     res.status(200).json(currentEvent[0]);
 });
 
-module.exports = { getAllEvents, getEventById, createEvent, patchEventById, deleteEventById, getLatestEvent };
+//@desc Get the all future events
+//@route POST /api/events/future
+//@access public
+const getAllFutureEvents = asyncHandler(async (req, res) => {
+  const now = new Date();
+  const futureEvents = await Event.find({
+      bufferedStartTime: { $gt: now },
+  })
+  .sort({ bufferedStartTime: 1 })
+  .populate("registrants.user");
+
+  return res.status(200).json(futureEvents);
+});
+
+module.exports = { getAllEvents, getEventById, createEvent, patchEventById, deleteEventById, getLatestEvent, getAllFutureEvents };
