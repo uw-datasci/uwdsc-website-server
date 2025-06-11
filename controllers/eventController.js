@@ -212,7 +212,7 @@ const getLatestEvent = asyncHandler(async (req, res) => {
 });
 
 //@desc Get the all future events
-//@route GET /api/events/future
+//@route POST /api/events/future
 //@access public
 const getAllFutureEvents = asyncHandler(async (req, res) => {
   const now = new Date();
