@@ -46,7 +46,6 @@ const validateAdmin = asyncHandler(async (req, res, next) => {
         throw new Error("Access denied, user is not an admin.");
       }
       
-      console.log("Admin verified");
       next();
     });
 
@@ -76,8 +75,23 @@ const validateExecRestrictions = asyncHandler(async (req, res, next) => {
     
     // Block exec users from changing userStatus in user updates
     if ((method === 'PATCH' || method === 'PUT') && path.includes('/users/') && req.body.userStatus) {
-      res.status(403);
-      throw new Error("Access denied. Exec users cannot change user status.");
+      // Get the user ID from the URL params
+      const userId = req.params.id;
+      if (userId) {
+        const mongoose = require('mongoose');
+        const User = mongoose.model('users');
+        
+        try {
+          const existingUser = await User.findById(userId);
+          if (existingUser && existingUser.userStatus !== req.body.userStatus) {
+            res.status(403);
+            throw new Error("Access denied. Exec users cannot change user status.");
+          }
+        } catch (error) {
+          res.status(500);
+          throw new Error("Error validating user status change.");
+        }
+      }
     }
   }
   
