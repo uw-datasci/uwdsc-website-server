@@ -21,6 +21,9 @@ const validateUser = asyncHandler(async (req, res, next) => {
       res.status(401);
       throw new Error("User is not authorized or token is missing");
     }
+  } else {
+    res.status(401);
+    throw new Error("User is not authorized or token is missing");
   }
 });
 
@@ -36,7 +39,14 @@ const validateAdmin = asyncHandler(async (req, res, next) => {
         throw new Error("User is not authorized");
       }
       req.user = decoded.user;
-      console.log("Admin verified")
+      
+      // Check if user has admin or exec privileges
+      if (req.user.userStatus !== 'admin' && req.user.userStatus !== 'exec') {
+        res.status(403);
+        throw new Error("Access denied, user is not an admin.");
+      }
+      
+      console.log("Admin verified");
       next();
     });
 
@@ -44,13 +54,35 @@ const validateAdmin = asyncHandler(async (req, res, next) => {
       res.status(401);
       throw new Error("User is not authorized or token is missing");
     }
-
-    if (req.user.userStatus !== 'admin') {
-          res.status(403)
-          throw new Error("Access denied, user is not an admin.");
-    }
+  } else {
+    res.status(401);
+    throw new Error("User is not authorized or token is missing");
   }
 });
 
 
-module.exports = { validateUser, validateAdmin };
+// Middleware to prevent exec users from certain admin operations
+const validateExecRestrictions = asyncHandler(async (req, res, next) => {
+  // Only apply restrictions if user is exec
+  if (req.user && req.user.userStatus === 'exec') {
+    const method = req.method;
+    const path = req.path;
+    
+    // Block exec users from deleting users
+    if (method === 'DELETE' && path.includes('/users/')) {
+      res.status(403);
+      throw new Error("Access denied. Exec users cannot delete other users.");
+    }
+    
+    // Block exec users from changing userStatus in user updates
+    if ((method === 'PATCH' || method === 'PUT') && path.includes('/users/') && req.body.userStatus) {
+      res.status(403);
+      throw new Error("Access denied. Exec users cannot change user status.");
+    }
+  }
+  
+  next();
+});
+
+
+module.exports = { validateUser, validateAdmin, validateExecRestrictions };
