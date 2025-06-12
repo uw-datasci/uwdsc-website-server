@@ -9,7 +9,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "resetEvent": "node util/resetEvent.js",
     "addAttendedEvents": "node scripts/addAttendedEvents.js",
-    "addIsMathSocField": "node scripts/addIsMathSocField.js"
+    "addIsMathSocField": "node scripts/addIsMathSocField.js",
+    "convertAdminsToExecs": "node scripts/convertAdminsToExecs.js"
   },
   "repository": {
     "type": "git",

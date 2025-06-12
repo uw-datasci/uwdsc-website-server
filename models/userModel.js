@@ -17,7 +17,7 @@ const userSchema = mongoose.Schema(
         },
         userStatus: {
             type: String,
-            enum: ['member', 'admin'],
+            enum: ['member', 'admin', 'exec'],
             required: [true, "Please add the user's status"],
             default: 'member'
         },
