@@ -21,11 +21,12 @@ const {
 } = require("../controllers/subEventController");
 
 const { requiresAll } = require("../middleware/errorHandler");
-const { validateAdmin } = require("../middleware/validateTokenHandler");
+const { validateAdmin, validateExecRestrictions } = require("../middleware/validateTokenHandler");
 
 const router = express.Router();
 
 router.use(validateAdmin);
+router.use(validateExecRestrictions);
 
 router.get("/users", getAllUsers);
 
