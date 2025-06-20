@@ -5,6 +5,8 @@ const dotenv = require("dotenv").config();
 const cors = require("cors");
 require("./models/eventModel")
 require("./models/userModel")
+require("./models/termModel")
+require("./models/applicationModel")
 
 connectDb();
 const app = express();
