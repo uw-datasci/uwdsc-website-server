@@ -7,7 +7,6 @@ const {
   verifyUser,
   sendForgotPasswordEmail,
   resetPassword,
-  getQr,
   checkUserHasPaid,
   backfillUserEvents,
   removeUserFromEvents,
@@ -17,8 +16,6 @@ const { validateUser } = require("../middleware/validateTokenHandler");
 const { getRegistrantById, attachRegistrantById, patchRegistrantById } = require("../controllers/registrantController");
 
 const router = express.Router();
-
-router.get("/qr", validateUser, getQr);
 
 router.get("/user", validateUser, currentUser);
 

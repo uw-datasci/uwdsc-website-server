@@ -289,34 +289,6 @@ const currentUser = asyncHandler(async (req, res) => {
   res.status(200).json(userObject);
 });
 
-//@desc Get QR payload
-//@route GET /api/users/getQr
-//@access private
-const getQr = asyncHandler(async (req, res) => {
-  const id = req.user.id;
-
-  let events = await Event.find().eventsHappeningOnBuffered(new Date());
-  if (!events) {
-    res.status(404)
-    throw new Error("There are no events happening right now.");
-  }
-  
-  events = await Promise.all(
-    events.map(async (event) => {
-      console.log(id)
-      console.log(process.env.ACCESS_TOKEN_SECRET)
-      console.log(event.secretName)
-      return {
-        id: event._id,
-        secret: await bcrypt.hash(id + process.env.ACCESS_TOKEN_SECRET + event.secretName, 10)
-      }
-    })
-  );
-  
-  
-  res.status(200).json({ id: id, eventArray: events });
-});
-
 //@desc Verifiesd a user
 //@route PATCH /api/users/verifyUser
 //@access public
@@ -561,7 +533,6 @@ module.exports = {
   sendForgotPasswordEmail,
   resetPassword,
   currentUser,
-  getQr,
   checkUserHasPaid,
   backfillUserEvents,
   removeUserFromEvents

@@ -10,10 +10,5 @@ node_modules/
 *.csv
 util/importErrors/
 
-#QR generation ignores
-*.pdf
-*.otf
-*.svg
-
 # local backups
 backup/
