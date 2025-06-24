@@ -13,7 +13,7 @@ const validateUser = asyncHandler(async (req, res, next) => {
         throw new Error("User is not authorized");
       }
       req.user = decoded.user;
-      console.log("User verified")
+      console.log("User verified");
       next();
     });
 
@@ -26,7 +26,6 @@ const validateUser = asyncHandler(async (req, res, next) => {
     throw new Error("User is not authorized or token is missing");
   }
 });
-
 
 const validateAdmin = asyncHandler(async (req, res, next) => {
   let token;
@@ -39,13 +38,13 @@ const validateAdmin = asyncHandler(async (req, res, next) => {
         throw new Error("User is not authorized");
       }
       req.user = decoded.user;
-      
+
       // Check if user has admin or exec privileges
-      if (req.user.userStatus !== 'admin' && req.user.userStatus !== 'exec') {
+      if (req.user.userStatus !== "admin" && req.user.userStatus !== "exec") {
         res.status(403);
         throw new Error("Access denied, user is not an admin.");
       }
-      
+
       next();
     });
 
@@ -59,33 +58,38 @@ const validateAdmin = asyncHandler(async (req, res, next) => {
   }
 });
 
-
 // Middleware to prevent exec users from certain admin operations
 const validateExecRestrictions = asyncHandler(async (req, res, next) => {
   // Only apply restrictions if user is exec
-  if (req.user && req.user.userStatus === 'exec') {
+  if (req.user && req.user.userStatus === "exec") {
     const method = req.method;
     const path = req.path;
-    
+
     // Block exec users from deleting users
-    if (method === 'DELETE' && path.includes('/users/')) {
+    if (method === "DELETE" && path.includes("/users/")) {
       res.status(403);
       throw new Error("Access denied. Exec users cannot delete other users.");
     }
-    
+
     // Block exec users from changing userStatus in user updates
-    if ((method === 'PATCH' || method === 'PUT') && path.includes('/users/') && req.body.userStatus) {
+    if (
+      (method === "PATCH" || method === "PUT") &&
+      path.includes("/users/") &&
+      req.body.userStatus
+    ) {
       // Get the user ID from the URL params
       const userId = req.params.id;
       if (userId) {
-        const mongoose = require('mongoose');
-        const User = mongoose.model('users');
-        
+        const mongoose = require("mongoose");
+        const User = mongoose.model("users");
+
         try {
           const existingUser = await User.findById(userId);
           if (existingUser && existingUser.userStatus !== req.body.userStatus) {
             res.status(403);
-            throw new Error("Access denied. Exec users cannot change user status.");
+            throw new Error(
+              "Access denied. Exec users cannot change user status."
+            );
           }
         } catch (error) {
           res.status(500);
@@ -94,9 +98,46 @@ const validateExecRestrictions = asyncHandler(async (req, res, next) => {
       }
     }
   }
-  
+
   next();
 });
 
+const validateMember = asyncHandler(async (req, res, next) => {
+  let token;
+  let authHeader = req.headers.Authorization || req.headers.authorization;
+  if (authHeader && authHeader.startsWith("Bearer")) {
+    token = authHeader.split(" ")[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+      if (err) {
+        res.status(401);
+        throw new Error("User is not authorized");
+      }
+      req.user = decoded.user;
 
-module.exports = { validateUser, validateAdmin, validateExecRestrictions };
+      // Check if user has member status
+      if (req.user.userStatus !== "member") {
+        res.status(403);
+        throw new Error(
+          "Access denied, user must be a member to access this resource."
+        );
+      }
+
+      next();
+    });
+
+    if (!token) {
+      res.status(401);
+      throw new Error("User is not authorized or token is missing");
+    }
+  } else {
+    res.status(401);
+    throw new Error("User is not authorized or token is missing");
+  }
+});
+
+module.exports = {
+  validateUser,
+  validateAdmin,
+  validateExecRestrictions,
+  validateMember,
+};
