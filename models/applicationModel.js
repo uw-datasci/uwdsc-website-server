@@ -90,7 +90,11 @@ const applicationSchema = mongoose.Schema(
       default: "draft",
       required: true,
     },
-
+    
+    comments: {
+      type: String,
+      required: false,
+    },
     createdAt: {
       type: Date,
       default: Date.now,

@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const { default: mongoose } = require("mongoose");
 const User = mongoose.model("users");
 const Event = mongoose.model("events");
+const Application = mongoose.model("applications");
 const dotenv = require("dotenv").config();
 
 function getSchemaKeysExcept(model, excludeKeys = []) {
@@ -144,4 +145,80 @@ const checkInById = asyncHandler(async (req, res) => {
     }
 });
 
-module.exports = { getAllUsers, getUserById, createUser, patchUserById, deleteUserById, checkInById };
+// @desc Get all applications
+// @route GET /api/admin/applications
+// @access Private
+const getAllApplications = asyncHandler(async (req, res) => {
+    const applications = await Application.find()
+    .populate("termApplyingFor", "termName");
+
+    res.status(200).json(applications);
+});
+
+
+// @desc Get application by Id
+// @route GET /api/admin/applications/:id
+// @access Private
+const getApplicationById = asyncHandler(async (req, res) => {
+    const appId = req.params.id;
+    const application = await Application.findById(appId)
+    .populate("termApplyingFor", "termName");
+    if (!application) {
+        return res.status(404).json({ message: "Application not found." });
+    }
+    res.status(200).json(application);
+});
+
+// @desc Update application by Id
+// @route PATCH /api/admin/applications/:id
+// @access Private
+const updateApplicationById = asyncHandler(async (req, res) => {
+    const appId = req.params.id;
+    const updates = req.body;
+    const application = await Application.findById(appId);
+    if (!application) {
+        return res.status(404).json({ message: "Application not found." });
+    }
+    const editableFields = ["status", "comments"];
+    for (const key of Object.keys(updates)) {
+        if (!(key in application.toObject())) {
+            return res.status(400).json(
+                { message: `${key} is not a valid key. The only editable fields are: ${editableFields.join(", ")}` }
+            );
+        }
+        if (!editableFields.includes(key)) {
+            return res.status(400).json({ message: `${key} is not permitted to be updated.`});
+        }
+    }
+    editableFields.forEach((field) => {
+        if (updates[field] !== undefined) {
+            application[field] = updates[field];
+        }
+    });
+    await application.save();
+    res.status(200).json({message: "Application successfully updated.", application})
+});
+
+// @desc Delete application by Id
+// @route DELETE /api/admin/applications/:id
+// @access Private
+const deleteApplicationById = asyncHandler(async (req, res) => {
+    const appId = req.params.id;
+    const application = await Application.findById(appId);
+    if (!application) {
+        return res.status(404).json({ message: "Application not found." });
+    }
+    await Application.findByIdAndDelete(appId);
+    res.status(200).json({ message: "Application successfully deleted." });
+});
+module.exports = { 
+    getAllUsers, 
+    getUserById, 
+    createUser, 
+    patchUserById, 
+    deleteUserById, 
+    checkInById, 
+    getAllApplications, 
+    getApplicationById, 
+    updateApplicationById, 
+    deleteApplicationById };

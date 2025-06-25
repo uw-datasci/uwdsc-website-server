@@ -6,6 +6,10 @@ const {
   patchUserById,
   deleteUserById,
   checkInById,
+  getAllApplications, 
+  getApplicationById, 
+  updateApplicationById, 
+  deleteApplicationById
 } = require("../controllers/adminController");
 
 const {
@@ -53,5 +57,13 @@ router.patch("/events/:id", patchEventById);
 router.delete("/events/:id", deleteEventById);
 
 router.post("/events/:event_id/subevents", createSubEvent);
+
+router.get("/applications", getAllApplications);
+
+router.get("/applications/:id", getApplicationById);
+
+router.patch("/applications/:id", updateApplicationById);
+
+router.delete("/applications/:id", deleteApplicationById);
 
 module.exports = router;
