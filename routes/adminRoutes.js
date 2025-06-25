@@ -7,9 +7,11 @@ const {
   deleteUserById,
   checkInById,
   getAllApplications, 
+  getAllApplicationsByTerm,
   getApplicationById, 
   updateApplicationById, 
-  deleteApplicationById
+  deleteApplicationById,
+  getAllTerms,
 } = require("../controllers/adminController");
 
 const {
@@ -60,10 +62,14 @@ router.post("/events/:event_id/subevents", createSubEvent);
 
 router.get("/applications", getAllApplications);
 
+router.get("/applications/byTerm/:termId", getAllApplicationsByTerm);
+
 router.get("/applications/:id", getApplicationById);
 
 router.patch("/applications/:id", updateApplicationById);
 
 router.delete("/applications/:id", deleteApplicationById);
+
+router.get("/terms", getAllTerms);
 
 module.exports = router;

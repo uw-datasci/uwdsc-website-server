@@ -4,6 +4,7 @@ const { default: mongoose } = require("mongoose");
 const User = mongoose.model("users");
 const Event = mongoose.model("events");
 const Application = mongoose.model("applications");
+const Term = mongoose.model("terms");
 const dotenv = require("dotenv").config();
 
 function getSchemaKeysExcept(model, excludeKeys = []) {
@@ -155,6 +156,17 @@ const getAllApplications = asyncHandler(async (req, res) => {
     res.status(200).json(applications);
 });
 
+// @desc Get all aplications in a term
+// @route GET /api/admin/applications/byTerm/:termId
+// @access Private
+const getAllApplicationsByTerm = asyncHandler(async (req, res) => {
+    const termId = req.params.termId;
+    const termApps = await Application.find({ termApplyingFor: termId })
+    .populate("termApplyingFor", "termName")
+    .sort({ createdAt: 1 }); // sort ascending
+
+    res.status(200).json(termApps);
+});
 
 // @desc Get application by Id
 // @route GET /api/admin/applications/:id
@@ -204,13 +216,21 @@ const updateApplicationById = asyncHandler(async (req, res) => {
 // @access Private
 const deleteApplicationById = asyncHandler(async (req, res) => {
     const appId = req.params.id;
-    const application = await Application.findById(appId);
+    const application = await Application.findByIdAndDelete(appId);
     if (!application) {
         return res.status(404).json({ message: "Application not found." });
     }
-    await Application.findByIdAndDelete(appId);
     res.status(200).json({ message: "Application successfully deleted." });
 });
+
+// @desc Get all terms
+// @route GET /api/admin/terms
+// @access Private
+const getAllTerms = asyncHandler(async (req, res) => {
+    const terms = await Term.find();
+    res.status(200).json(terms);
+});
+
 module.exports = { 
     getAllUsers, 
     getUserById, 
@@ -219,6 +239,8 @@ module.exports = {
     deleteUserById, 
     checkInById, 
     getAllApplications, 
+    getAllApplicationsByTerm,
     getApplicationById, 
     updateApplicationById, 
-    deleteApplicationById };
+    deleteApplicationById,
+    getAllTerms };
