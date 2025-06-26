@@ -102,39 +102,6 @@ const validateExecRestrictions = asyncHandler(async (req, res, next) => {
   next();
 });
 
-const validateMember = asyncHandler(async (req, res, next) => {
-  let token;
-  let authHeader = req.headers.Authorization || req.headers.authorization;
-  if (authHeader && authHeader.startsWith("Bearer")) {
-    token = authHeader.split(" ")[1];
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-      if (err) {
-        res.status(401);
-        throw new Error("User is not authorized");
-      }
-      req.user = decoded.user;
-
-      // Check if user has member status
-      if (req.user.userStatus !== "member") {
-        res.status(403);
-        throw new Error(
-          "Access denied, user must be a member to access this resource."
-        );
-      }
-
-      next();
-    });
-
-    if (!token) {
-      res.status(401);
-      throw new Error("User is not authorized or token is missing");
-    }
-  } else {
-    res.status(401);
-    throw new Error("User is not authorized or token is missing");
-  }
-});
-
 module.exports = {
   validateUser,
   validateAdmin,
