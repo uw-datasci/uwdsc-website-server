@@ -106,5 +106,4 @@ module.exports = {
   validateUser,
   validateAdmin,
   validateExecRestrictions,
-  validateMember,
 };
