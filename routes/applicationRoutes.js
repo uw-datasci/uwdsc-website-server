@@ -1,15 +1,21 @@
 const express = require("express");
-const { createApplication } = require("../controllers/applicationController");
+const {
+  createApplication,
+  getApplicationByUserId,
+  getCurrentTerm,
+} = require("../controllers/applicationController");
 const { requiresAll } = require("../middleware/errorHandler");
 const { validateUser } = require("../middleware/validateTokenHandler");
 
 const router = express.Router();
 
 router.post(
-  "/create",
+  "/submit",
   validateUser,
   requiresAll(["termApplyingFor", "personalInfo", "academicInfo", "resumeUrl"]),
   createApplication
 );
+router.post("/my_application", validateUser, getApplicationByUserId);
+router.get("/currentTerm", getCurrentTerm);
 
 module.exports = router;
