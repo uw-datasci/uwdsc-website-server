@@ -234,7 +234,7 @@ const sendForgotPasswordEmail = asyncHandler(async (req, res) => {
     emailHtml = fs.readFileSync("./emailHtml/forgotpassword.html", "utf8");
     emailHtml = emailHtml.replace(
       "<custom-link>",
-      `${process.env.WEBSITE_URL}account/resetPassword?id=${user.id}&token=${token}`
+      `${process.env.WEBSITE_URL}/account/resetPassword?id=${user.id}&token=${token}`
     );
     emailHtml = emailHtml.replace("<custom-email>", email);
     console.log("Forgot password email generated.")
