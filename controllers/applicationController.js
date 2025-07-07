@@ -116,7 +116,7 @@ const createApplication = asyncHandler(async (req, res) => {
     },
     questionAnswers: questionAnswers || new Map(),
     resumeUrl,
-    status: "draft",
+    status: "submitted",
   });
 
   if (!application) {
@@ -125,7 +125,7 @@ const createApplication = asyncHandler(async (req, res) => {
   }
 
   res.status(201).json({
-    message: "Application created successfully",
+    message: "Application submitted successfully",
     application: {
       id: application._id,
       status: application.status,
@@ -133,6 +133,94 @@ const createApplication = asyncHandler(async (req, res) => {
     },
   });
 });
+
+//@desc Patch or create (if not already existing) an application draft
+//@route POST /api/applications
+//@access private (members only)
+const patchApplication = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const {
+    termApplyingFor,
+    personalInfo,
+    academicInfo,
+    clubExperience,
+    questionAnswers,
+    resumeUrl,
+  } = req.body;
+
+  if (!termApplyingFor) {
+    res.status(400);
+    throw new Error("termApplyingFor is required");
+  }
+
+  const term = await termModel.findById(termApplyingFor);
+  if (!term) {
+    res.status(404);
+    throw new Error("Term not found");
+  }
+
+  // Try to find an existing application
+  let application = await applicationModel.findOne({
+    userId,
+    termApplyingFor,
+  });
+
+  if (application) {
+    // Update fields if they are present in req.body
+    if (personalInfo) {
+      application.personalInfo = {
+        ...application.personalInfo,
+        ...personalInfo,
+      };
+    }
+
+    if (academicInfo) {
+      application.academicInfo = {
+        ...application.academicInfo,
+        ...academicInfo,
+      };
+    }
+
+    if (clubExperience) {
+      application.clubExperience = {
+        ...application.clubExperience,
+        ...clubExperience,
+      };
+    }
+
+    if (questionAnswers) {
+      application.questionAnswers = questionAnswers;
+    }
+
+    if (resumeUrl !== undefined) {
+      application.resumeUrl = resumeUrl;
+    }
+
+    application.status = "draft";
+    await application.save();
+  } else {
+    application = await applicationModel.create({
+      userId,
+      termApplyingFor,
+      personalInfo: personalInfo || {},
+      academicInfo: academicInfo || {},
+      clubExperience: clubExperience || {},
+      questionAnswers: questionAnswers || new Map(),
+      resumeUrl: resumeUrl || "",
+      status: "draft",
+    });
+  }
+
+  res.status(200).json({
+    message: "Application draft saved",
+    application: {
+      id: application._id,
+      status: application.status,
+      updatedAt: application.updatedAt,
+    },
+  });
+});
+
 
 //@desc Get application by user ID for the current term
 //@route GET /api/applications/user
@@ -229,6 +317,7 @@ const getCurrentTerm = asyncHandler(async (req, res) => {
 
 module.exports = {
   createApplication,
+  patchApplication,
   getApplicationByUserId: getCurrentApplicationByUserId,
   getCurrentTerm,
 };
