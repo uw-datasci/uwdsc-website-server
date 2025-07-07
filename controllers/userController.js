@@ -273,6 +273,61 @@ const sendForgotPasswordEmail = asyncHandler(async (req, res) => {
     });
 });
 
+//@desc Sends the app confirmation email
+//@route POST /api/users/sendAppConfirmationEmail
+//@access public
+const sendAppConfirmationEmail = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  let user = await User.findOne({ email: email });
+  if (!user) {
+    res.status(404)
+    throw Error("Unable to find user.")
+  }
+
+  const username = user.username;
+
+  console.log("Generating app confirmation email...")
+  let emailHtml;
+  try {
+    emailHtml = fs.readFileSync("./emailHtml/appConfirmation.html", "utf8");
+    emailHtml = emailHtml.replace("<custom-username>", username);
+    console.log("App confirmation email generated.")
+  } catch (err) {
+    console.error("Error reading file:", err);
+    res.status(500);
+    throw new Error("Failed to read app confirmation email HTML.");
+  }
+
+  console.log("Sending app confirmation email...");
+  await transporter
+    .sendMail({
+      from: {
+        name: "DSC Automated Mail",
+        address: "noreply@uwdatascience.ca"
+      },
+      to: email,
+      subject: username + " - Exec Application Confirmation",
+      html: emailHtml,
+      attachments: [
+        {
+          filename: "dsc.svg",
+          path: __dirname + "/../emailHtml/dsc.svg",
+          cid: "logo", //same cid value as in the html img src
+        },
+      ],
+    })
+    .then(() => {
+      console.log("App confirmation email sent.");
+      res.status(200).json({ message: "App confirmation email sent" });
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500);
+      throw new Error("App confirmation email was not able to be sent");
+    });
+});
+
 //@desc Current user info
 //@route GET /api/users/current
 //@access private
@@ -535,5 +590,6 @@ module.exports = {
   currentUser,
   checkUserHasPaid,
   backfillUserEvents,
-  removeUserFromEvents
+  removeUserFromEvents,
+  sendAppConfirmationEmail
 };
