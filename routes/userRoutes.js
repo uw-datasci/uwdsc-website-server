@@ -10,6 +10,7 @@ const {
   checkUserHasPaid,
   backfillUserEvents,
   removeUserFromEvents,
+  sendAppConfirmationEmail
 } = require("../controllers/userController");
 const { requiresAll } = require("../middleware/errorHandler")
 const { validateUser } = require("../middleware/validateTokenHandler");
@@ -40,6 +41,8 @@ router.post("/login",
 router.post("/sendVerification",requiresAll(["email"]), sendVerificationEmail);
 
 router.post("/sendForgotPassword",requiresAll(["email"]), sendForgotPasswordEmail);
+
+router.post("/sendAppConfirmationEmail", requiresAll(["email"]), sendAppConfirmationEmail);
 
 router.patch("/resetPass",
   requiresAll([
