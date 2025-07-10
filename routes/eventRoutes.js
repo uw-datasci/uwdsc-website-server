@@ -2,11 +2,8 @@ const express = require("express");
 const {
   getAllEvents,
   getEventById,
-  createEvent,
   getLatestEvent,
   getAllFutureEvents,
-  patchEventById,
-  deleteEventById,
 } = require("../controllers/eventController");
 const { checkInRegistrantById } = require("../controllers/registrantController");
 const { validateUser } = require("../middleware/validateTokenHandler");
