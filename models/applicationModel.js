@@ -1,5 +1,9 @@
 const mongoose = require("mongoose");
 
+const isRequiredUnlessDraft = function () {
+  return this.status !== "draft";
+};
+
 const applicationSchema = mongoose.Schema(
   {
     userId: {
@@ -13,45 +17,46 @@ const applicationSchema = mongoose.Schema(
       required: [true, "Please add the term applying for"],
     },
 
-    // Section 1: Personal Information (fixed structure)
+    // Section 1: Personal Information
     personalInfo: {
       uwEmail: {
         type: String,
-        required: [true, "Please add the user's UW email"],
+        required: [isRequiredUnlessDraft, "Please add the user's UW email"],
       },
       personalEmail: {
         type: String,
-        required: [true, "Please add the user's personal email"],
+        required: [isRequiredUnlessDraft, "Please add the user's personal email"],
       },
       fullName: {
         type: String,
-        required: [true, "Please add the user's full name"],
+        required: [isRequiredUnlessDraft, "Please add the user's full name"],
       },
     },
 
-    // Section 2: Academic Information (fixed structure)
+    // Section 2: Academic Information
     academicInfo: {
       program: {
         type: String,
-        required: [true, "Please add the user's program"],
+        required: [isRequiredUnlessDraft, "Please add the user's program"],
       },
       academicTerm: {
         type: String,
-        required: [true, "Please add the user's academic term"],
+        required: [isRequiredUnlessDraft, "Please add the user's academic term"],
       },
       location: {
         type: String,
-        required: [true, "Please add the user's location"],
         enum: [
           "Study Term",
           "Co-op Term in Waterloo",
           "Co-op Term but can commute to Waterloo",
           "Co-op term not in Waterloo",
+          "",
         ],
+        required: [isRequiredUnlessDraft, "Please add the user's location"],
       },
     },
 
-    // Section 3: Past Experience with Club (fixed structure)
+    // Section 3: Club Experience
     clubExperience: {
       previousMember: {
         type: Boolean,
@@ -63,20 +68,20 @@ const applicationSchema = mongoose.Schema(
       },
     },
 
-    // Section 4: Variable Questions (dynamic based on term)
+    // Section 4: Dynamic Questions
     questionAnswers: {
       type: Map,
-      of: mongoose.Schema.Types.Mixed, // Flexible to handle different answer types
+      of: mongoose.Schema.Types.Mixed,
       default: new Map(),
     },
 
-    // Resume upload
+    // Resume
     resumeUrl: {
       type: String,
-      required: [true, "Please add the user's resume URL"],
+      required: [isRequiredUnlessDraft, "Please add the user's resume URL"],
     },
 
-    // Application status tracking
+    // Application Status
     status: {
       type: String,
       enum: [
@@ -113,11 +118,10 @@ const applicationSchema = mongoose.Schema(
   }
 );
 
-// Pre-save middleware to update updatedAt and handle submission
+// Automatically update timestamps and set submittedAt
 applicationSchema.pre("save", function (next) {
   this.updatedAt = new Date();
 
-  // Set submittedAt when status changes to submitted
   if (
     this.isModified("status") &&
     this.status === "submitted" &&
@@ -129,7 +133,7 @@ applicationSchema.pre("save", function (next) {
   next();
 });
 
-// Index for efficient queries
+// Indexes for efficient querying
 applicationSchema.index({ userId: 1, termApplyingFor: 1 }, { unique: true });
 applicationSchema.index({ termApplyingFor: 1, status: 1 });
 
