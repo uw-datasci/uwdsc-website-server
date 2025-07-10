@@ -22,14 +22,17 @@ const applicationSchema = mongoose.Schema(
     rolesApplyingFor: {
       type: [String],
       enum: [
-        "dev",
-        "education", 
-        "social_media",
-        "marketing",
-        "events",
-        "design",
-        "operations",
-        "general",
+        "Events Exec",
+        "Events Co-VP", 
+        "Design Exec",
+        "Education Exec",
+        "Internal Exec",
+        "Outreach Exec",
+        "Outreach Co-VP",
+        "Development Exec",
+        "Development Co-VP",
+        "Social Media Exec",
+        "Social Media VP",
       ],
       validate: {
         validator: function (roles) {
