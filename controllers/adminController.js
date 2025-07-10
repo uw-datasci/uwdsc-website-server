@@ -227,7 +227,7 @@ const deleteApplicationById = asyncHandler(async (req, res) => {
 // @route GET /api/admin/terms
 // @access Private
 const getAllTerms = asyncHandler(async (req, res) => {
-    const terms = await Term.find();
+    const terms = await Term.find().sort({ appReleaseDate: -1 });
     res.status(200).json(terms);
 });
 

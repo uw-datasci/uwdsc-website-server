@@ -130,7 +130,6 @@ const attachRegistrantById = asyncHandler(async (req, res) => {
 const checkInRegistrantById = asyncHandler(async (req, res) => {
   const {event_id, user_id} = req.params;
 
-  console.log("YESSSS")
   console.log(req.user.id, user_id)
   if (req.user.id !== user_id) {
     res.status(403);

@@ -181,6 +181,14 @@ const patchEventById = asyncHandler(async (req, res) => {
 //@access private
 const deleteEventById = asyncHandler(async (req, res) => {
   const { id } = req.params;
+
+  // // delete event from evenList of all useres who attended
+  await User.updateMany(
+    { eventList: id },
+    { $pull: { eventList: id} }
+  );
+
+  // delete event
   await Event.findByIdAndDelete(id);
 
   await User.updateMany(
