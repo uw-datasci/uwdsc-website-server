@@ -8,7 +8,7 @@ const { termModel } = require("../models/termModel");
 //@desc Patch or create (if not already existing) an application draft
 //@route POST /api/applications
 //@access private (members only)
-const patchApplication = asyncHandler(async (req, res) => {
+const createOrUpdateApplication = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const {
     termApplyingFor,
@@ -195,7 +195,7 @@ const getCurrentTerm = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
-  patchApplication,
-  getApplicationByUserId: getCurrentApplicationByUserId,
+  createOrUpdateApplication,
+  getCurrentApplicationByUserId,
   getCurrentTerm,
 };

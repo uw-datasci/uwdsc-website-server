@@ -1,15 +1,15 @@
 const express = require("express");
 const {
-  getApplicationByUserId,
+  createOrUpdateApplication,
   getCurrentTerm,
-  patchApplication,
+  getCurrentApplicationByUserId,
 } = require("../controllers/applicationController");
 const { validateUser } = require("../middleware/validateTokenHandler");
 
 const router = express.Router();
 
-router.post("/save", validateUser, patchApplication);
-router.post("/myApplication", validateUser, getApplicationByUserId);
+router.post("/save", validateUser, createOrUpdateApplication);
+router.post("/myApplication", validateUser, getCurrentApplicationByUserId);
 router.get("/currentTerm", getCurrentTerm);
 
 module.exports = router;
