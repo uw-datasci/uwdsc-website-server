@@ -9,7 +9,7 @@ const { validateUser } = require("../middleware/validateTokenHandler");
 const router = express.Router();
 
 router.post("/save", validateUser, patchApplication);
-router.post("/my_application", validateUser, getApplicationByUserId);
+router.post("/myApplication", validateUser, getApplicationByUserId);
 router.get("/currentTerm", getCurrentTerm);
 
 module.exports = router;

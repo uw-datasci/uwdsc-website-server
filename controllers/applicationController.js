@@ -12,10 +12,8 @@ const patchApplication = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const {
     termApplyingFor,
-    personalInfo,
-    academicInfo,
-    clubExperience,
-    questionAnswers,
+    rolesApplyingFor,
+    roleQuestionAnswers,
     resumeUrl,
     status,
   } = req.body;
@@ -31,56 +29,72 @@ const patchApplication = asyncHandler(async (req, res) => {
     throw new Error("Term not found");
   }
 
+  // Validate that selected roles exist in the term
+  if (rolesApplyingFor && rolesApplyingFor.length > 0) {
+    const availableRoles = term.getAvailableRoles();
+    const invalidRoles = rolesApplyingFor.filter(role => !availableRoles.includes(role));
+    if (invalidRoles.length > 0) {
+      res.status(400);
+      throw new Error(`Invalid roles: ${invalidRoles.join(', ')}. Available roles: ${availableRoles.join(', ')}`);
+    }
+  }
+
   // Try to find an existing application
   let application = await applicationModel.findOne({ userId, termApplyingFor });
 
   if (application) {
     // Update fields if they are present in req.body
-    if (personalInfo) {
-      application.personalInfo = {
-        ...application.personalInfo,
-        ...personalInfo,
-      };
-    }
+    if (rolesApplyingFor) application.rolesApplyingFor = rolesApplyingFor;
 
-    if (academicInfo) {
-      application.academicInfo = {
-        ...application.academicInfo,
-        ...academicInfo,
-      };
+    if (roleQuestionAnswers) {
+      // Handle Map updates properly
+      for (const [role, answers] of Object.entries(roleQuestionAnswers)) {
+        const existingAnswers = application.roleQuestionAnswers.get(role) || new Map();
+        
+        // Merge new answers with existing ones
+        for (const [questionId, answer] of Object.entries(answers)) {
+          existingAnswers.set(questionId, answer);
+        }
+        
+        application.roleQuestionAnswers.set(role, existingAnswers);
+      }
     }
-
-    if (clubExperience) {
-      application.clubExperience = {
-        ...application.clubExperience,
-        ...clubExperience,
-      };
-    }
-
-    if (questionAnswers) application.questionAnswers = questionAnswers;
 
     if (resumeUrl !== undefined) application.resumeUrl = resumeUrl;
-
-    application.status = status;
+    if (status !== undefined) application.status = status;
+    
     await application.save();
   } else {
-    application = await applicationModel.create({
+    // Create new application
+    const newApplication = {
       userId,
       termApplyingFor,
-      personalInfo: personalInfo || {},
-      academicInfo: academicInfo || {},
-      clubExperience: clubExperience || {},
-      questionAnswers: questionAnswers || new Map(),
+      rolesApplyingFor: rolesApplyingFor || [],
       resumeUrl: resumeUrl || "",
-      status: "draft",
-    });
+      status: status || "draft",
+    };
+
+    // Handle roleQuestionAnswers for new application
+    if (roleQuestionAnswers) {
+      const roleAnswersMap = new Map();
+      for (const [role, answers] of Object.entries(roleQuestionAnswers)) {
+        roleAnswersMap.set(role, new Map(Object.entries(answers)));
+      }
+      newApplication.roleQuestionAnswers = roleAnswersMap;
+    }
+
+    application = await applicationModel.create(newApplication);
   }
 
   res.status(200).json({
     message: "Application draft saved",
     application: {
       id: application._id,
+      userId: application.userId,
+      termApplyingFor: application.termApplyingFor,
+      rolesApplyingFor: application.rolesApplyingFor,
       status: application.status,
+      createdAt: application.createdAt,
       updatedAt: application.updatedAt,
     },
   });
@@ -94,15 +108,14 @@ const getCurrentApplicationByUserId = asyncHandler(async (req, res) => {
   const now = new Date();
 
   // Find the current term (where applications are currently open)
-  // Convert dates to ISO strings to match the database format
   const currentTerm = await termModel.findOne({
-    appReleaseDate: { $lte: now.toISOString() },
-    appDeadline: { $gte: now.toISOString() },
+    appReleaseDate: { $lte: now },
+    appHardDeadline: { $gte: now },
   });
 
   // If no current term found, try to find the most recent term
   let term = currentTerm;
-  if (!term) term = await termModel.findOne().sort({ appDeadline: -1 });
+  if (!term) term = await termModel.findOne().sort({ appReleaseDate: -1 });
 
   if (!term) {
     res.status(404);
@@ -110,15 +123,10 @@ const getCurrentApplicationByUserId = asyncHandler(async (req, res) => {
   }
 
   // Find the application for this user and term
-  const application = await applicationModel
-    .findOne({
-      userId,
-      termApplyingFor: term._id,
-    })
-    .populate(
-      "termApplyingFor",
-      "termName appReleaseDate appDeadline questions"
-    );
+  const application = await applicationModel.findOne({
+    userId,
+    termApplyingFor: term._id,
+  });
 
   // If no application found, return empty response (not an error)
   if (!application) {
@@ -131,8 +139,9 @@ const getCurrentApplicationByUserId = asyncHandler(async (req, res) => {
         id: term._id,
         termName: term.termName,
         appReleaseDate: term.appReleaseDate,
-        appDeadline: term.appDeadline,
+        appDeadline: term.appSoftDeadline,
         isCurrent: !!currentTerm,
+        questions: [],
       },
     });
   }
@@ -141,7 +150,14 @@ const getCurrentApplicationByUserId = asyncHandler(async (req, res) => {
   res.status(200).json({
     message: "Application found",
     application: application.toJSON(),
-    term: { isCurrent: !!currentTerm },
+    term: {
+      id: term._id,
+      termName: term.termName,
+      appReleaseDate: term.appReleaseDate,
+      appDeadline: term.appSoftDeadline,
+      isCurrent: !!currentTerm,
+      questions: term.questions,
+    },
   });
 });
 
@@ -152,10 +168,9 @@ const getCurrentTerm = asyncHandler(async (req, res) => {
   const now = new Date();
 
   // Find the current term (where applications are currently open)
-  // Convert dates to ISO strings to match the database format
   const currentTerm = await termModel.findOne({
     appReleaseDate: { $lte: now },
-    appDeadline: { $gte: now },
+    appHardDeadline: { $gte: now },
   });
 
   if (!currentTerm) {
@@ -172,7 +187,7 @@ const getCurrentTerm = asyncHandler(async (req, res) => {
       id: currentTerm._id,
       termName: currentTerm.termName,
       appReleaseDate: currentTerm.appReleaseDate,
-      appDeadline: currentTerm.appDeadline,
+      appDeadline: currentTerm.appSoftDeadline,
       questions: currentTerm.questions,
     },
     isOpen: true,

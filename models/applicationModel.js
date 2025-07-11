@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { questionSchema } = require("./questionModel");
 
 const isRequiredUnlessDraft = function () {
   return this.status !== "draft";
@@ -54,14 +55,14 @@ const applicationSchema = mongoose.Schema(
     },
 
     // Role-specific Question Answers
-    // Answers to questions from the selected roles in the term's questionsByRole
+    // Answers to questions from the selected roles in the term's questions array
     // Structure: { role: { questionId: answer } }
     // Note: General questions (personal info, academic info, club experience) are stored under the "general" role
     roleQuestionAnswers: {
       type: Map,
       of: {
         type: Map,
-        of: mongoose.Schema.Types.Mixed,
+        of: mongoose.Schema.Types.Mixed,  // Store the actual answer values
       },
       default: new Map(),
       validate: {

@@ -34,40 +34,28 @@ const router = express.Router();
 router.use(validateAdmin);
 router.use(validateExecRestrictions);
 
+// User admin routes
 router.get("/users", getAllUsers);
-
 router.get("/users/:id", getUserById);
-
 router.post("/users", createUser);
-
 router.patch("/users/:id", patchUserById);
-
 router.patch("/users/checkIn/:id", requiresAll(["eventName"]), checkInById);
-
 router.delete("/users/:id", deleteUserById);
 
+// Event admin routes
 router.use("/events/:event_id/registrants", require("./registrantRoutes"));
-
 router.get("/events", getAllEvents);
-
 router.get("/events/:id", getEventById);
-
 router.post("/events", createEvent);
-
 router.patch("/events/:id", patchEventById);
-
 router.delete("/events/:id", deleteEventById);
-
 router.post("/events/:event_id/subevents", createSubEvent);
 
+// Application admin routes
 router.get("/applications", getAllApplications);
-
 router.get("/applications/byTerm/:termId", getAllApplicationsByTerm);
-
 router.get("/applications/:id", getApplicationById);
-
 router.patch("/applications/:id", updateApplicationById);
-
 router.delete("/applications/:id", deleteApplicationById);
 
 router.get("/terms", getAllTerms);
