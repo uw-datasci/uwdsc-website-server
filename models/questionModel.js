@@ -10,7 +10,7 @@ const questionSchema = mongoose.Schema(
       type: String,
       enum: [
         "Events Exec",
-        "Events Co-VP", 
+        "Events Co-VP",
         "Design Exec",
         "Education Exec",
         "Internal Exec",
@@ -21,6 +21,7 @@ const questionSchema = mongoose.Schema(
         "Social Media Exec",
         "Social Media VP",
         "general",
+        "supplementary",
       ],
       required: true,
     },
@@ -63,9 +64,7 @@ const questionSchema = mongoose.Schema(
       type: [String],
       validate: {
         validator: function (value) {
-          return (
-            !value || ["multiple_choice", "checkbox"].includes(this.type)
-          );
+          return !value || ["multiple_choice", "checkbox"].includes(this.type);
         },
         message:
           "options is only valid for multiple_choice and checkbox fields",
