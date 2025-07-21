@@ -24,7 +24,7 @@ const applicationSchema = mongoose.Schema(
       type: [String],
       enum: [
         "Events Exec",
-        "Events Co-VP", 
+        "Events Co-VP",
         "Design Exec",
         "Education Exec",
         "Internal Exec",
@@ -38,7 +38,10 @@ const applicationSchema = mongoose.Schema(
       validate: {
         validator: function (roles) {
           // Must have at least 1 role and at most 3 roles
-          if (this.status !== "draft" && (roles.length < 1 || roles.length > 3)) {
+          if (
+            this.status !== "draft" &&
+            (roles.length < 1 || roles.length > 3)
+          ) {
             return false;
           }
           // Check for duplicate roles
@@ -62,7 +65,7 @@ const applicationSchema = mongoose.Schema(
       type: Map,
       of: {
         type: Map,
-        of: mongoose.Schema.Types.Mixed,  // Store the actual answer values
+        of: mongoose.Schema.Types.Mixed, // Store the actual answer values
       },
       default: new Map(),
       validate: {
@@ -71,17 +74,21 @@ const applicationSchema = mongoose.Schema(
           if (this.status === "draft") {
             return true;
           }
-          
+
           // Validate that all answered roles are in the rolesApplyingFor array or are "general"
           for (const role of roleAnswers.keys()) {
-            if (role !== "general" && !this.rolesApplyingFor.includes(role)) {
+            if (
+              !["general", "supplementary"].includes(role) &&
+              !this.rolesApplyingFor.includes(role)
+            ) {
               return false;
             }
           }
-          
+
           return true;
         },
-        message: "Question answers must correspond to the selected roles or general questions",
+        message:
+          "Question answers must correspond to the selected roles or general questions",
       },
     },
 
@@ -105,7 +112,7 @@ const applicationSchema = mongoose.Schema(
       default: "draft",
       required: true,
     },
-    
+
     comments: {
       type: String,
       required: false,
@@ -136,50 +143,81 @@ applicationSchema.methods.validateQuestionAnswers = async function () {
 
   try {
     // Populate the term to get questions
-    await this.populate('termApplyingFor');
-    
+    await this.populate("termApplyingFor");
+
     const term = this.termApplyingFor;
     const errors = [];
-    
+
     // Always validate general questions (required for all applications)
     const generalQuestions = term.getQuestionsForRole("general");
     const generalAnswers = this.roleQuestionAnswers.get("general") || new Map();
-    
+
     for (const question of generalQuestions) {
       if (question.required && !generalAnswers.has(question.id)) {
-        errors.push(`Required general question "${question.question}" is not answered`);
+        errors.push(
+          `Required general question "${question.question}" is not answered`
+        );
       }
     }
-    
+
     // Check if all provided general answers correspond to valid questions
     for (const [questionId, answer] of generalAnswers.entries()) {
-      const question = generalQuestions.find(q => q.id === questionId);
+      const question = generalQuestions.find((q) => q.id === questionId);
       if (!question) {
-        errors.push(`Answer provided for unknown general question ID: ${questionId}`);
+        errors.push(
+          `Answer provided for unknown general question ID: ${questionId}`
+        );
       }
     }
-    
+
     // Validate answers for each selected role
     for (const role of this.rolesApplyingFor) {
       const roleQuestions = term.getQuestionsForRole(role);
       const roleAnswers = this.roleQuestionAnswers.get(role) || new Map();
-      
+
       // Check if all required questions are answered for this role
       for (const question of roleQuestions) {
         if (question.required && !roleAnswers.has(question.id)) {
-          errors.push(`Required question "${question.question}" for role "${role}" is not answered`);
+          errors.push(
+            `Required question "${question.question}" for role "${role}" is not answered`
+          );
         }
       }
-      
+
       // Check if all provided answers correspond to valid questions for this role
       for (const [questionId, answer] of roleAnswers.entries()) {
-        const question = roleQuestions.find(q => q.id === questionId);
+        const question = roleQuestions.find((q) => q.id === questionId);
         if (!question) {
-          errors.push(`Answer provided for unknown question ID: ${questionId} in role "${role}"`);
+          errors.push(
+            `Answer provided for unknown question ID: ${questionId} in role "${role}"`
+          );
         }
       }
     }
-    
+
+    // Validate supplementary questions
+    const supplementaryQuestions = term.getQuestionsForRole("supplementary");
+    const supplementaryAnswers =
+      this.roleQuestionAnswers.get("supplementary") || new Map();
+
+    for (const question of supplementaryQuestions) {
+      if (question.required && !supplementaryAnswers.has(question.id)) {
+        errors.push(
+          `Required supplementary question "${question.question}" is not answered`
+        );
+      }
+    }
+
+    // Check for unkoown supplementary question IDs
+    for (const [questionId, answer] of supplementaryAnswers.entries()) {
+      const question = supplementaryQuestions.find((q) => q.id === questionId);
+      if (!question) {
+        errors.push(
+          `Answer provided for unknown supplementary question ID: ${questionId}`
+        );
+      }
+    }
+
     return { valid: errors.length === 0, errors };
   } catch (error) {
     return { valid: false, errors: [`Validation error: ${error.message}`] };
@@ -188,8 +226,8 @@ applicationSchema.methods.validateQuestionAnswers = async function () {
 
 // Helper method to get the preferred role (first in the list)
 applicationSchema.methods.getPreferredRole = function () {
-  return this.rolesApplyingFor && this.rolesApplyingFor.length > 0 
-    ? this.rolesApplyingFor[0] 
+  return this.rolesApplyingFor && this.rolesApplyingFor.length > 0
+    ? this.rolesApplyingFor[0]
     : null;
 };
 
@@ -209,24 +247,28 @@ applicationSchema.methods.setAnswersForRole = function (role, answers) {
 };
 
 // Static method to get questions for specific roles from a term
-applicationSchema.statics.getQuestionsForRoles = async function (termId, roles) {
-  const { termModel } = require('./termModel');
+applicationSchema.statics.getQuestionsForRoles = async function (
+  termId,
+  roles
+) {
+  const { termModel } = require("./termModel");
   try {
     const term = await termModel.findById(termId);
     if (!term) {
-      throw new Error('Term not found');
+      throw new Error("Term not found");
     }
-    
+
     const questionsForRoles = {};
-    
-    // Always include general questions
+
+    // Always include general and supplementary questions
     questionsForRoles["general"] = term.getQuestionsForRole("general");
-    
+    questionsForRoles["supplementary"] =
+      term.getQuestionsForRole("supplementary");
     // Add questions for each selected role
     for (const role of roles) {
       questionsForRoles[role] = term.getQuestionsForRole(role);
     }
-    
+
     return questionsForRoles;
   } catch (error) {
     throw new Error(`Error getting questions for roles: ${error.message}`);
@@ -235,13 +277,13 @@ applicationSchema.statics.getQuestionsForRoles = async function (termId, roles) 
 
 // Static method to get questions for a single role (backward compatibility)
 applicationSchema.statics.getQuestionsForRole = async function (termId, role) {
-  const { termModel } = require('./termModel');
+  const { termModel } = require("./termModel");
   try {
     const term = await termModel.findById(termId);
     if (!term) {
-      throw new Error('Term not found');
+      throw new Error("Term not found");
     }
-    
+
     return term.getQuestionsForRole(role);
   } catch (error) {
     throw new Error(`Error getting questions for role: ${error.message}`);

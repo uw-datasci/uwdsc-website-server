@@ -6,7 +6,7 @@ const { applicationModel } = require("../models/applicationModel");
 const { termModel } = require("../models/termModel");
 
 //@desc Patch or create (if not already existing) an application draft
-//@route POST /api/applications
+//@route POST /api/applications/save
 //@access private (members only)
 const createOrUpdateApplication = asyncHandler(async (req, res) => {
   const userId = req.user.id;
@@ -32,10 +32,16 @@ const createOrUpdateApplication = asyncHandler(async (req, res) => {
   // Validate that selected roles exist in the term
   if (rolesApplyingFor && rolesApplyingFor.length > 0) {
     const availableRoles = term.getAvailableRoles();
-    const invalidRoles = rolesApplyingFor.filter(role => !availableRoles.includes(role));
+    const invalidRoles = rolesApplyingFor.filter(
+      (role) => !availableRoles.includes(role)
+    );
     if (invalidRoles.length > 0) {
       res.status(400);
-      throw new Error(`Invalid roles: ${invalidRoles.join(', ')}. Available roles: ${availableRoles.join(', ')}`);
+      throw new Error(
+        `Invalid roles: ${invalidRoles.join(
+          ", "
+        )}. Available roles: ${availableRoles.join(", ")}`
+      );
     }
   }
 
@@ -47,22 +53,27 @@ const createOrUpdateApplication = asyncHandler(async (req, res) => {
     if (rolesApplyingFor) application.rolesApplyingFor = rolesApplyingFor;
 
     if (roleQuestionAnswers) {
-      // Handle Map updates properly
+      // Update roleQA with new answers
       for (const [role, answers] of Object.entries(roleQuestionAnswers)) {
-        const existingAnswers = application.roleQuestionAnswers.get(role) || new Map();
-        
-        // Merge new answers with existing ones
-        for (const [questionId, answer] of Object.entries(answers)) {
-          existingAnswers.set(questionId, answer);
-        }
-        
-        application.roleQuestionAnswers.set(role, existingAnswers);
+        const newAnswersMap = new Map(Object.entries(answers));
+        application.roleQuestionAnswers.set(role, newAnswersMap);
       }
+
+      // Delete roles from roleQuqestionAnswers not present in the new rolesApplyingFor
+      for (const existingRole of application.roleQuestionAnswers.keys()) {
+        if (
+          !(existingRole in roleQuestionAnswers) &&
+          !["general", "supplementary"].includes(existingRole)
+        ) {
+          application.roleQuestionAnswers.delete(existingRole);
+        }
+      }
+      application.markModified("roleQuestionAnswers");
     }
 
     if (resumeUrl !== undefined) application.resumeUrl = resumeUrl;
     if (status !== undefined) application.status = status;
-    
+
     await application.save();
   } else {
     // Create new application
