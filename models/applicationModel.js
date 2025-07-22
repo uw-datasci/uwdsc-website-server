@@ -34,6 +34,8 @@ const applicationSchema = mongoose.Schema(
         "Development Co-VP",
         "Social Media Exec",
         "Social Media VP",
+        "Project Lead",
+        "Workshop Lead",
       ],
       validate: {
         validator: function (roles) {
