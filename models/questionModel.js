@@ -23,6 +23,7 @@ const questionSchema = mongoose.Schema(
         "Project Lead",
         "Workshop Lead",
         "CxC Co-VP",
+        "CxC Exec",
         "general",
         "supplementary",
       ],
