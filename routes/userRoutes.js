@@ -10,7 +10,8 @@ const {
   checkUserHasPaid,
   backfillUserEvents,
   removeUserFromEvents,
-  sendAppConfirmationEmail
+  sendAppConfirmationEmail,
+  getPaidUsers
 } = require("../controllers/userController");
 const { requiresAll } = require("../middleware/errorHandler")
 const { validateUser } = require("../middleware/validateTokenHandler");
@@ -68,5 +69,7 @@ router.get("/hasPaid/:user_id", checkUserHasPaid);
 router.post("/backfillAll/:user_id", backfillUserEvents);
 
 router.delete("/removeFromEvents/:user_id", removeUserFromEvents);
+
+router.get("/paidMembers", getPaidUsers);
 
 module.exports = router;
