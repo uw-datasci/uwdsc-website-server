@@ -585,7 +585,9 @@ const removeUserFromEvents = asyncHandler(async (req, res) => {
 //@access public
 const getPaidUsers = asyncHandler(async (req, res) => {
   try {
-    const paidUsers = await User.find({ hasPaid: true }).select("isMathSocMember");
+    const paidUsers = await User.find({ hasPaid: true }).select(
+        "hasPaid isMathSocMember"
+    );
     res.status(200).json(paidUsers);
   } catch (err) {
     console.error("Error fetching paid users:", err);
