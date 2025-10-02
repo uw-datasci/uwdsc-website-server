@@ -96,18 +96,19 @@ const createEvent = asyncHandler(async (req, res) => {
     requirements,
     toDisplay,
     additionalFieldsSchema,
+    imageUrl,
   } = req.body;
 
   try {
     // Get all current users
     const users = await User.find({});
-    
+
     // Create registrants array with all users
-    const registrants = users.map(user => ({
+    const registrants = users.map((user) => ({
       user: user._id,
       hasPaid: true,
       checkedIn: false,
-      selected: true
+      selected: true,
     }));
 
     // Basic event data
@@ -121,8 +122,13 @@ const createEvent = asyncHandler(async (req, res) => {
       requirements,
       toDisplay,
       additionalFieldsSchema,
-      registrants
+      registrants,
     };
+
+    // Add image field if provided
+    if (imageUrl) {
+      newEventData.imageUrl = imageUrl;
+    }
 
     // Only set bufferedStartDate if bufferedStartTime was given
     if (bufferedStartTime) {
@@ -141,8 +147,7 @@ const createEvent = asyncHandler(async (req, res) => {
       message: "Event created successfully",
       eventId: event._id,
     });
-  } 
-  catch (err) {
+  } catch (err) {
     console.error(err);
     throw err;
   }
@@ -183,18 +188,12 @@ const deleteEventById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   // // delete event from evenList of all useres who attended
-  await User.updateMany(
-    { eventList: id },
-    { $pull: { eventList: id} }
-  );
+  await User.updateMany({ eventList: id }, { $pull: { eventList: id } });
 
   // delete event
   await Event.findByIdAndDelete(id);
 
-  await User.updateMany(
-    { eventList: id },
-    { $pull: { eventList: id } }
-  );
+  await User.updateMany({ eventList: id }, { $pull: { eventList: id } });
 
   res.status(200).json({ message: "Event deleted successfully" });
 });
@@ -203,20 +202,20 @@ const deleteEventById = asyncHandler(async (req, res) => {
 //@route GET /api/events/latest
 //@access public
 const getLatestEvent = asyncHandler(async (req, res) => {
-    const now = new Date();
-    const currentEvent = await Event.find({
-        bufferedStartTime: { $lte: now },
-        bufferedEndTime: { $gte: now }
-    })
+  const now = new Date();
+  const currentEvent = await Event.find({
+    bufferedStartTime: { $lte: now },
+    bufferedEndTime: { $gte: now },
+  })
     .sort({ bufferedStartTime: 1 })
     .limit(1)
     .populate("registrants.user");
 
-    if (!currentEvent || currentEvent.length === 0) {
-      return res.status(200).json(null);
-    }
+  if (!currentEvent || currentEvent.length === 0) {
+    return res.status(200).json(null);
+  }
 
-    res.status(200).json(currentEvent[0]);
+  res.status(200).json(currentEvent[0]);
 });
 
 //@desc Get the all future events
@@ -225,12 +224,38 @@ const getLatestEvent = asyncHandler(async (req, res) => {
 const getAllFutureEvents = asyncHandler(async (req, res) => {
   const now = new Date();
   const futureEvents = await Event.find({
-      bufferedStartTime: { $gt: now },
+    bufferedStartTime: { $gt: now },
   })
-  .sort({ bufferedStartTime: 1 })
-  .populate("registrants.user");
+    .sort({ bufferedStartTime: 1 })
+    .populate("registrants.user");
 
   return res.status(200).json(futureEvents);
 });
 
-module.exports = { getAllEvents, getEventById, createEvent, patchEventById, deleteEventById, getLatestEvent, getAllFutureEvents };
+//@desc Get all past events
+//@route GET /api/events/past
+//@access public
+const getAllPastEvents = asyncHandler(async (req, res) => {
+  const { limit = 10 } = req.query;
+  const currentDate = new Date();
+
+  const pastEvents = await Event.find({
+    endTime: { $lt: currentDate }, // Events that have ended
+  })
+    .select("_id name imageUrl description location startTime endTime") // Include more useful fields
+    .sort({ startTime: -1 }) // Most recent first
+    .limit(parseInt(limit));
+
+  res.status(200).json({ events: pastEvents });
+});
+
+module.exports = {
+  getAllEvents,
+  getEventById,
+  createEvent,
+  patchEventById,
+  deleteEventById,
+  getLatestEvent,
+  getAllFutureEvents,
+  getAllPastEvents,
+};
