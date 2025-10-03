@@ -32,7 +32,7 @@ const eventSchema = mongoose.Schema(
     },
     bufferedStartTime: {
       type: Date,
-      required: true
+      required: true,
     },
     endTime: {
       type: Date,
@@ -41,6 +41,13 @@ const eventSchema = mongoose.Schema(
     bufferedEndTime: {
       type: Date,
       required: true,
+    },
+
+    // Image information for event
+    imageUrl: {
+      type: String,
+      required: false,
+      default: null,
     },
 
     // Sensitve information for event
@@ -64,17 +71,17 @@ const eventSchema = mongoose.Schema(
       },
       checkedIn: {
         type: Boolean,
-        default: false
+        default: false,
       },
       selected: {
         type: Boolean,
-        default: true
+        default: true,
       },
       registrant: {
         type: Map,
         of: mongoose.Schema.Types.Mixed,
       },
-      required: true
+      required: true,
     },
 
     // What to display to admins during check-in
@@ -87,11 +94,11 @@ const eventSchema = mongoose.Schema(
         user: {
           type: Map,
           of: mongoose.Schema.Types.Mixed,
-          required: true
+          required: true,
         },
         checkedIn: {
           type: String,
-          default: "Checked In"
+          default: "Checked In",
         },
         selected: {
           type: String,
@@ -99,9 +106,9 @@ const eventSchema = mongoose.Schema(
         registrant: {
           type: Map,
           of: mongoose.Schema.Types.Mixed,
-          default: {}
+          default: {},
         },
-        required: true
+        required: true,
       },
       after: {
         type: Map,
@@ -109,11 +116,11 @@ const eventSchema = mongoose.Schema(
         user: {
           type: Map,
           of: mongoose.Schema.Types.Mixed,
-          required: true
+          required: true,
         },
         checkedIn: {
           type: String,
-          default: "Checked In"
+          default: "Checked In",
         },
         selected: {
           type: String,
@@ -121,9 +128,9 @@ const eventSchema = mongoose.Schema(
         registrant: {
           type: Map,
           of: mongoose.Schema.Types.Mixed,
-          default: {}
+          default: {},
         },
-        required: true
+        required: true,
       },
       required: [true, "Please provide what to display before/after check-in"],
     },
@@ -133,10 +140,15 @@ const eventSchema = mongoose.Schema(
       type: Map,
       of: {
         type: String,
-        enum: [TYPE_CONSTANTS.ARRAY, TYPE_CONSTANTS.STRING, TYPE_CONSTANTS.NUMBER, TYPE_CONSTANTS.BOOL], 
+        enum: [
+          TYPE_CONSTANTS.ARRAY,
+          TYPE_CONSTANTS.STRING,
+          TYPE_CONSTANTS.NUMBER,
+          TYPE_CONSTANTS.BOOL,
+        ],
       },
       required: true,
-      default: {}
+      default: {},
     },
 
     // All users that have registered for this event
@@ -163,16 +175,23 @@ const eventSchema = mongoose.Schema(
             type: String,
             default: "Applied",
             required: true,
-            enum: ["Accepted", "Confirmed", "Waitlist", "Rejected", "Expired", "Applied"]
+            enum: [
+              "Accepted",
+              "Confirmed",
+              "Waitlist",
+              "Rejected",
+              "Expired",
+              "Applied",
+            ],
           },
           additionalFields: {
             type: Map,
-            of: mongoose.Schema.Types.Mixed
+            of: mongoose.Schema.Types.Mixed,
           },
-        }
+        },
       ],
       required: true,
-      default: []
+      default: [],
     },
 
     subEvents: {
@@ -180,51 +199,51 @@ const eventSchema = mongoose.Schema(
         {
           name: {
             type: String,
-            required: true
+            required: true,
           },
           description: {
             type: String,
-            required: true
+            required: true,
           },
           location: {
             type: String,
-            required: true
+            required: true,
           },
           startTime: {
             type: Date,
-            required: true
+            required: true,
           },
           bufferedStartTime: {
             type: Date,
-            required: true
+            required: true,
           },
           endTime: {
             type: Date,
-            required: true
+            required: true,
           },
           bufferedEndTime: {
             type: Date,
-            required: true
+            required: true,
           },
           checkedIn: {
             type: [mongoose.Schema.Types.ObjectId],
             ref: "users",
-            required: true
-          }
-        }
+            required: true,
+          },
+        },
       ],
-      default: []
-    }
+      default: [],
+    },
   },
   {
-    timestamps: true
+    timestamps: true,
   }
 );
 
 /**
  * Validation function to ensure the map follows the schema and if not, throws and error
- * @param {mongoose.Schema} schema 
- * @param {mongoose.Map} map | null 
+ * @param {mongoose.Schema} schema
+ * @param {mongoose.Map} map | null
  * @param {function} next
  */
 const mapValidator = (schema, map, next) => {
@@ -232,28 +251,33 @@ const mapValidator = (schema, map, next) => {
     const errorMessage = mapKeysErrorMessage(schema)({ value: map });
     throw next(new Error(errorMessage));
   }
-}
+};
 
 const convertInnerObjectsToMaps = (outerMap) => {
   return new Map(
     Array.from(outerMap, ([key, value]) => [
       key,
-      value && typeof value === "object" ? new Map(Object.entries(value)) : value,
+      value && typeof value === "object"
+        ? new Map(Object.entries(value))
+        : value,
     ])
   );
-}
+};
 
 eventSchema.pre("validate", function (next) {
   if (!this.isRegistrationRequired) {
-    this.additionalFieldsSchema = {}
+    this.additionalFieldsSchema = {};
   }
-  
+
   // To fix
   this.toDisplay = new Map([
     ["before", convertInnerObjectsToMaps(this.toDisplay.get("before"))],
-    ["after", convertInnerObjectsToMaps(this.toDisplay.get("after"))]
-  ]) 
-  this.requirements.set("user", new Map(Object.entries(this.requirements.get("user"))));
+    ["after", convertInnerObjectsToMaps(this.toDisplay.get("after"))],
+  ]);
+  this.requirements.set(
+    "user",
+    new Map(Object.entries(this.requirements.get("user")))
+  );
 
   if (this.isNew && this.startTime < new Date()) {
     next(new Error("Cannot create past events."));
@@ -263,19 +287,19 @@ eventSchema.pre("validate", function (next) {
     return next(new Error("Start time must be before end time."));
   }
 
-  const schemaDefinition = {}
+  const schemaDefinition = {};
   this.additionalFieldsSchema.forEach((type, key) => {
     schemaDefinition[key] = {
-      type: type
+      type: type,
     };
   });
 
   const schema = new mongoose.Schema(schemaDefinition);
-  
+
   mapValidator(schema, this.toDisplay.get("before")?.get("registrant"), next);
   mapValidator(schema, this.toDisplay.get("after")?.get("registrant"), next);
   mapValidator(schema, this.requirements.get("registrant"), next);
-  
+
   mapValidator(userSchema, this.toDisplay.get("before")?.get("user"), next);
   mapValidator(userSchema, this.toDisplay.get("after")?.get("user"), next);
   mapValidator(userSchema, this.requirements.get("user"), next);
@@ -293,7 +317,9 @@ eventSchema.pre("validate", function (next) {
   }
 
   if (!this.isRegistrationRequired && this.subEvents.length > 0) {
-    throw next(new Error("Only events that require registration can have sub-events!"));
+    throw next(
+      new Error("Only events that require registration can have sub-events!")
+    );
   }
 
   next();
@@ -303,10 +329,10 @@ eventSchema.pre("save", async function (next) {
   const User = mongoose.model("users");
 
   if (!this.isRegistrationRequired) {
-    const allUsers = await User.find(); 
+    const allUsers = await User.find();
     this.registrants = allUsers.map((user) => ({
       user: user._id,
-      selected: true
+      selected: true,
     }));
   }
 
@@ -325,13 +351,16 @@ eventSchema.query.eventsHappeningOn = function (dateTime) {
 
 // Return all event happening on dateTime with buffer
 eventSchema.query.eventsHappeningOnBuffered = function (dateTime) {
-  return this.where("bufferedStartTime").lte(dateTime).where("bufferedEndTime").gte(dateTime);
+  return this.where("bufferedStartTime")
+    .lte(dateTime)
+    .where("bufferedEndTime")
+    .gte(dateTime);
 };
 
 // Return all events happening before dateTime
 eventSchema.query.eventsHappeningBefore = function (dateTime) {
   return this.where("startTime").lte(dateTime);
-}
+};
 
 // Return all events happening after dateTime
 eventSchema.query.eventsHappeningAfter = function (dateTime) {
@@ -341,7 +370,7 @@ eventSchema.query.eventsHappeningAfter = function (dateTime) {
 // Return all events
 eventSchema.query.allEvents = function () {
   return this;
-}
+};
 
 eventSchema.virtual("registrantCount").get(function () {
   if (this.registrants) {
@@ -357,8 +386,8 @@ eventSchema.set("toObject", { virtuals: true });
 eventSchema.index({ secretName: 1 }, { unique: true });
 eventSchema.index({ startTime: 1 });
 
-const eventModel = mongoose.model("events", eventSchema); 
+const eventModel = mongoose.model("events", eventSchema);
 module.exports = {
-    eventSchema,
-    eventModel
-}
+  eventSchema,
+  eventModel,
+};
