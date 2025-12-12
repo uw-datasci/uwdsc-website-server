@@ -580,6 +580,22 @@ const removeUserFromEvents = asyncHandler(async (req, res) => {
     });
 });
 
+//@desc Get mathsoc status of all paid users
+//@route GET /api/users/paidMembers
+//@access public
+const getPaidUsers = asyncHandler(async (req, res) => {
+  try {
+    const paidUsers = await User.find({ hasPaid: true }).select(
+        "hasPaid isMathSocMember"
+    );
+    res.status(200).json(paidUsers);
+  } catch (err) {
+    console.error("Error fetching paid users:", err);
+    res.status(500);
+    throw new Error("Failed to fetch paid users");
+  }
+})
+
 module.exports = {
   registerUser,
   sendVerificationEmail,
@@ -591,5 +607,6 @@ module.exports = {
   checkUserHasPaid,
   backfillUserEvents,
   removeUserFromEvents,
-  sendAppConfirmationEmail
+  sendAppConfirmationEmail,
+  getPaidUsers,
 };

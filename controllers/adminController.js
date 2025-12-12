@@ -88,6 +88,12 @@ const patchUserById = asyncHandler(async (req, res) => {
         throw Error("Unable to find user.")
     }
 
+    const adminId = req.user.id;
+    if (adminId.toString() === req.params.id.toString() && req.body.hasOwnProperty('hasPaid') && req.body.hasPaid === true){
+        res.status(403);
+        throw Error("You cannot edit your own payment status.");
+    }
+
     const allowedFields = getSchemaKeysExcept(User, ["isIncomplete", "token"])
     const updatedFields = Object.fromEntries(
         Object.entries(req.body).filter(([key]) => allowedFields.includes(key))
