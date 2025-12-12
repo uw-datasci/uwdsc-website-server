@@ -38,7 +38,9 @@ async function exportPaidUsers() {
       header: [
         { id: "username", title: "Username" },
         { id: "email", title: "Email" },
+        { id: "watIAM", title: "watIAM" },
         { id: "faculty", title: "Faculty" },
+        { id: "isMathSocMember", title: "isMathSocMember" },
         { id: "term", title: "Term" },
         { id: "paymentMethod", title: "PaymentMethod" },
         { id: "paymentLocation", title: "PaymentLocation" },
@@ -50,7 +52,9 @@ async function exportPaidUsers() {
     const records = paidUsers.map((user) => ({
       username: user.username,
       email: user.email,
+      watIAM: user.watIAM,
       faculty: user.faculty,
+      isMathSocMember: user.isMathSocMember,
       term: user.term,
       paymentMethod: user.paymentMethod || "",
       paymentLocation: user.paymentLocation || "",
