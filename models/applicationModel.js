@@ -38,6 +38,8 @@ const applicationSchema = mongoose.Schema(
         "Workshop Lead",
         "CxC Co-VP",
         "CxC Exec",
+        "Graphic Designer",
+        "Product Designer",
       ],
       validate: {
         validator: function (roles) {
@@ -136,7 +138,7 @@ const applicationSchema = mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Helper method to validate question answers against term questions
@@ -159,7 +161,7 @@ applicationSchema.methods.validateQuestionAnswers = async function () {
     for (const question of generalQuestions) {
       if (question.required && !generalAnswers.has(question.id)) {
         errors.push(
-          `Required general question "${question.question}" is not answered`
+          `Required general question "${question.question}" is not answered`,
         );
       }
     }
@@ -169,7 +171,7 @@ applicationSchema.methods.validateQuestionAnswers = async function () {
       const question = generalQuestions.find((q) => q.id === questionId);
       if (!question) {
         errors.push(
-          `Answer provided for unknown general question ID: ${questionId}`
+          `Answer provided for unknown general question ID: ${questionId}`,
         );
       }
     }
@@ -183,7 +185,7 @@ applicationSchema.methods.validateQuestionAnswers = async function () {
       for (const question of roleQuestions) {
         if (question.required && !roleAnswers.has(question.id)) {
           errors.push(
-            `Required question "${question.question}" for role "${role}" is not answered`
+            `Required question "${question.question}" for role "${role}" is not answered`,
           );
         }
       }
@@ -193,7 +195,7 @@ applicationSchema.methods.validateQuestionAnswers = async function () {
         const question = roleQuestions.find((q) => q.id === questionId);
         if (!question) {
           errors.push(
-            `Answer provided for unknown question ID: ${questionId} in role "${role}"`
+            `Answer provided for unknown question ID: ${questionId} in role "${role}"`,
           );
         }
       }
@@ -207,7 +209,7 @@ applicationSchema.methods.validateQuestionAnswers = async function () {
     for (const question of supplementaryQuestions) {
       if (question.required && !supplementaryAnswers.has(question.id)) {
         errors.push(
-          `Required supplementary question "${question.question}" is not answered`
+          `Required supplementary question "${question.question}" is not answered`,
         );
       }
     }
@@ -217,7 +219,7 @@ applicationSchema.methods.validateQuestionAnswers = async function () {
       const question = supplementaryQuestions.find((q) => q.id === questionId);
       if (!question) {
         errors.push(
-          `Answer provided for unknown supplementary question ID: ${questionId}`
+          `Answer provided for unknown supplementary question ID: ${questionId}`,
         );
       }
     }
@@ -253,7 +255,7 @@ applicationSchema.methods.setAnswersForRole = function (role, answers) {
 // Static method to get questions for specific roles from a term
 applicationSchema.statics.getQuestionsForRoles = async function (
   termId,
-  roles
+  roles,
 ) {
   const { termModel } = require("./termModel");
   try {

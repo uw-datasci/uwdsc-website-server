@@ -12,6 +12,7 @@ const questionSchema = mongoose.Schema(
         "Events Exec",
         "Events Co-VP",
         "Design Exec",
+        "Product Exec",
         "Education Exec",
         "Internal Exec",
         "Outreach Exec",
@@ -88,7 +89,7 @@ const questionSchema = mongoose.Schema(
   },
   {
     _id: false, // Disable auto _id generation for subdocuments when used as embedded
-  }
+  },
 );
 
 const questionModel = mongoose.model("questions", questionSchema);
